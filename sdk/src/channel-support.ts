@@ -143,8 +143,34 @@ const BOT_PREFERENCE = /\bkeep\s+(?:me\s+)?(?:with\s+)?(?:the\s+)?(?:bot|chatbot
 const RETRACTION = /^(?:never\s*mind|cancel\s+that|forget\s+it|scratch\s+that|no\s+thanks?)\b/iu;
 const NON_SUPPORT = /\b(?:courier|driver|delivery|postman|mailman)\b/iu;
 
+// Tokens that make a message "essentially just a role word" (e.g. "human",
+// "agent please") rather than a sentence that happens to start with one.
+const POLITE_TOKEN = new Set(["please", "pls", "thanks", "thank", "you", "now"]);
+// Pure grammatical glue (and the couple of adjectives that commonly modify a
+// role word, e.g. "a live agent" / "a real person") that doesn't break
+// proximity between a request cue and the role word it precedes.
+const ADJACENCY_FILLER = new Set(["a", "an", "the", "to", "with", "for", "me", "us", "live", "real"]);
+
 function tokenize(text: string): string[] {
   return text.toLowerCase().replace(/['’]/gu, "").split(/[^a-z]+/u).filter((t) => t.length > 0);
+}
+
+// True only if some request cue appears before roleIndex with nothing but
+// filler tokens between it and the role word — i.e. the cue is adjacent to
+// the role, not merely present somewhere earlier in the message.
+function hasAdjacentRequestCue(tokens: readonly string[], roleIndex: number): boolean {
+  for (let cueIndex = 0; cueIndex < roleIndex; cueIndex++) {
+    if (!REQUEST_CUE.has(tokens[cueIndex]!)) continue;
+    let blockedByContent = false;
+    for (let between = cueIndex + 1; between < roleIndex; between++) {
+      if (!ADJACENCY_FILLER.has(tokens[between]!)) {
+        blockedByContent = true;
+        break;
+      }
+    }
+    if (!blockedByContent) return true;
+  }
+  return false;
 }
 
 export function detectHumanRequest(text: string): boolean {
@@ -157,7 +183,13 @@ export function detectHumanRequest(text: string): boolean {
   if (roleIndex < 0) return false;
   const leading = tokens.slice(0, roleIndex);
   if (leading.some((t) => NEGATION.has(t)) || leading.some((t) => REPORTING.has(t))) return false;
-  // A bare role ("human") or a role preceded by a request cue counts.
-  if (tokens.length === 1) return true;
-  return leading.some((t) => REQUEST_CUE.has(t)) || roleIndex === 0;
+  // A bare role word ("human"), or a role word plus only polite filler
+  // tokens ("agent please"), is a genuine minimal request on its own —
+  // regardless of where the role word sits in the message.
+  const otherTokens = tokens.filter((_, index) => index !== roleIndex);
+  if (otherTokens.length === 0 || otherTokens.every((t) => POLITE_TOKEN.has(t))) return true;
+  // Otherwise this must be a real sentence: only count it as a handoff
+  // request when a request cue sits immediately (or near-immediately, via
+  // grammatical glue) before the role word — not merely anywhere earlier.
+  return hasAdjacentRequestCue(tokens, roleIndex);
 }

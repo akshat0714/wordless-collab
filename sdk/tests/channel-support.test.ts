@@ -92,4 +92,26 @@ describe("detectHumanRequest", () => {
       "where is my refund", "the courier is a real person",
     ]) expect(detectHumanRequest(text), text).toBe(false);
   });
+  it("still recognizes genuine requests phrased with a role word near the cue", () => {
+    for (const text of [
+      "can I talk to a person", "connect me to a human", "I need to speak to someone",
+      "transfer me to an agent", "let me speak with a representative",
+    ]) expect(detectHumanRequest(text), text).toBe(true);
+  });
+  it("treats a bare role word, or role word plus polite tokens, as a genuine minimal request", () => {
+    expect(detectHumanRequest("human")).toBe(true);
+    expect(detectHumanRequest("agent")).toBe(true);
+    expect(detectHumanRequest("agent please")).toBe(true);
+  });
+  it("does not treat a sentence that merely starts with a role word as a handoff request", () => {
+    for (const text of [
+      "Manager approved the refund yesterday", "Agent Smith called about the package",
+    ]) expect(detectHumanRequest(text), text).toBe(false);
+  });
+  it("requires the request cue to be near the role word, not merely present earlier in the message", () => {
+    for (const text of [
+      "I need to know if someone already used this coupon",
+      "Can I get a refund if a person already claimed the item",
+    ]) expect(detectHumanRequest(text), text).toBe(false);
+  });
 });
