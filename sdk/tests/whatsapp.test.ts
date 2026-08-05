@@ -201,7 +201,9 @@ describe("createWhatsAppCloudAdapter", () => {
     const adapter = createWhatsAppCloudAdapter({ chatbot: clarifyChatbot() as any, appSecret: APP, phoneNumberId: "111",
       choiceSigningSecret: "sig-secret-000000000000000000000000", resolveAuthenticatedAccount: async () => account,
       choiceStore: memoryStore(), now: FIXED });
-    await expect(adapter.processWebhook(textWebhook("x"), "sha256=bad")).rejects.toThrow();
+    await expect(adapter.processWebhook(textWebhook("x"), "sha256=bad")).rejects.toThrow(
+      WhatsAppWebhookValidationError,
+    );
   });
 
   it("continues the host bot when the account is unauthenticated", async () => {
@@ -248,5 +250,71 @@ describe("createWhatsAppCloudAdapter", () => {
     const replay = tap.replace("wamid.tap", "wamid.tap2");
     const [replayResult] = await adapter.processWebhook(replay, signBody(replay));
     expect(replayResult).toMatchObject({ kind: "continue", reason: "choice_replayed" });
+  });
+
+  it("hands off to a human when human handoff is enabled and the message requests one", async () => {
+    const adapter = createWhatsAppCloudAdapter({ chatbot: clarifyChatbot() as any, appSecret: APP, phoneNumberId: "111",
+      choiceSigningSecret: "sig-secret-000000000000000000000000", resolveAuthenticatedAccount: async () => account,
+      choiceStore: memoryStore(), now: FIXED, humanHandoff: { enabled: true } });
+    const raw = textWebhook("connect me to a human");
+    const [result] = await adapter.processWebhook(raw, signBody(raw));
+    expect(result).toMatchObject({ kind: "handoff", reason: "human_requested" });
+  });
+
+  it("does not hand off the same phrasing when human handoff is not enabled", async () => {
+    const adapter = createWhatsAppCloudAdapter({ chatbot: clarifyChatbot() as any, appSecret: APP, phoneNumberId: "111",
+      choiceSigningSecret: "sig-secret-000000000000000000000000", resolveAuthenticatedAccount: async () => account,
+      choiceStore: memoryStore(), now: FIXED });
+    const raw = textWebhook("connect me to a human");
+    const [result] = await adapter.processWebhook(raw, signBody(raw));
+    expect(result!.kind).not.toBe("handoff");
+    expect(result!.kind).toBe("post_message");
+  });
+
+  it("returns a safe continue and reports the error when the resolver throws under accountResolutionFailureMode: continue", async () => {
+    const boom = new Error("resolver exploded");
+    const errors: unknown[] = [];
+    const adapter = createWhatsAppCloudAdapter({ chatbot: clarifyChatbot() as any, appSecret: APP, phoneNumberId: "111",
+      choiceSigningSecret: "sig-secret-000000000000000000000000",
+      resolveAuthenticatedAccount: async () => { throw boom; },
+      choiceStore: memoryStore(), now: FIXED,
+      accountResolutionFailureMode: "continue",
+      onAccountResolutionError: (error) => errors.push(error) });
+    const raw = textWebhook("charged twice");
+    const [result] = await adapter.processWebhook(raw, signBody(raw));
+    expect(result).toMatchObject({ kind: "continue", reason: "account_not_authenticated" });
+    expect(errors).toEqual([boom]);
+  });
+
+  it("propagates the resolver's error out of processWebhook by default", async () => {
+    const boom = new Error("resolver exploded");
+    const adapter = createWhatsAppCloudAdapter({ chatbot: clarifyChatbot() as any, appSecret: APP, phoneNumberId: "111",
+      choiceSigningSecret: "sig-secret-000000000000000000000000",
+      resolveAuthenticatedAccount: async () => { throw boom; },
+      choiceStore: memoryStore(), now: FIXED });
+    const raw = textWebhook("charged twice");
+    await expect(adapter.processWebhook(raw, signBody(raw))).rejects.toBe(boom);
+  });
+
+  it("treats an expired signed button payload as a safe continue, without recording confirmation", async () => {
+    const store = memoryStore();
+    const recorded: unknown[] = [];
+    const chatbot = { ...clarifyChatbot(), recordConfirmation: async (c: unknown) => { recorded.push(c); return {} as any; } };
+    let currentTime = new Date("2023-11-14T22:13:30.000Z");
+    const adapter = createWhatsAppCloudAdapter({ chatbot: chatbot as any, appSecret: APP, phoneNumberId: "111",
+      choiceSigningSecret: "sig-secret-000000000000000000000000", resolveAuthenticatedAccount: async () => account,
+      choiceStore: store, now: () => currentTime, choiceTtlMs: 60_000 });
+    const raw = textWebhook("charged twice");
+    const [posted] = await adapter.processWebhook(raw, signBody(raw));
+    const payload = (posted as any).request.body.interactive.action.buttons[0].reply.id as string;
+    // Advance the injected clock past the 60s choice TTL before the tap arrives.
+    currentTime = new Date(currentTime.getTime() + 61_000);
+    const tap = JSON.stringify({ object: "whatsapp_business_account", entry: [{ id: "e", changes: [{ field: "messages", value: {
+      metadata: { phone_number_id: "111" }, contacts: [{ wa_id: "1555" }],
+      messages: [{ from: "1555", id: "wamid.expired", timestamp: "1700000005", type: "interactive",
+        interactive: { type: "button_reply", button_reply: { id: payload, title: "A duplicate charge" } } }] } }] }] });
+    const [result] = await adapter.processWebhook(tap, signBody(tap));
+    expect(result).toMatchObject({ kind: "continue", reason: "choice_replayed" });
+    expect(recorded).toHaveLength(0);
   });
 });
