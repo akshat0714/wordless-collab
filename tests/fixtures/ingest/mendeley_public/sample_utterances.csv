@@ -1,0 +1,7 @@
+issueid,id,comment_seq,utr_seq,author,created,is_private,actionbody,author_role
+42.0,900.0,0,1,masked-reporter,2026-01-02 10:00:00+00:00,0.0,please help,reporter
+42.0,902.0,2,1,masked-agent,2026-01-02 10:05:00+00:00,0.0,jane@example.com,assignee
+43.0,910.0,0,0,second-reporter,2026-01-03 10:00:00+00:00,0.0,same issue,reporter
+42.0,901.0,1,0,automation,2026-01-02 10:02:00+00:00,1.0,assigned internally,others
+42.0,900.0,0,0,masked-reporter,2026-01-02 10:00:01+00:00,0.0,My name is Jane Doe.,reporter
+42.0,902.0,2,0,masked-agent,2026-01-02 10:05:01+00:00,0.0,We resolved this. Contact,assignee

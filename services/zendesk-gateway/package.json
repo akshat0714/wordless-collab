@@ -1,0 +1,30 @@
+{
+  "name": "@wordless/zendesk-gateway",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Durable, tenant-isolated Zendesk Conversations gateway for Wordless",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "migrate": "node dist/migrate.js",
+    "quarantine": "node dist/reconcile.js",
+    "test": "vitest run --coverage=false",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@wordless/sdk": "file:../../sdk",
+    "pg": "^8.16.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.1.0",
+    "@types/pg": "^8.15.5",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  }
+}

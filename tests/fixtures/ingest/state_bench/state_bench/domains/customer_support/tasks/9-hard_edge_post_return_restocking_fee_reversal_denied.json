@@ -1,0 +1,27 @@
+{
+  "task_id": "9-hard_edge_post_return_restocking_fee_reversal_denied",
+  "user_id": "cust_002",
+  "now": "2026-07-10T10:00:00",
+  "opening_message": "This opening message is a runtime oracle and must not be copied.",
+  "task_summary": "DO_NOT_LEAK_RETURN_ORACLE",
+  "user_simulator": {
+    "user_sim_context": "DO_NOT_LEAK_SIMULATOR_CONTEXT",
+    "known_info": ["DO_NOT_LEAK_KNOWN_INFO"],
+    "unknown_info": [],
+    "task_rules": ["DO_NOT_LEAK_TASK_RULE"]
+  },
+  "task_requirements": [
+    {
+      "id": "DO_NOT_LEAK_REQUIREMENT",
+      "kind": "must",
+      "requirement": "DO_NOT_LEAK_REQUIREMENT_TEXT"
+    }
+  ],
+  "state_requirements": [
+    {
+      "field": "DO_NOT_LEAK_STATE_REQUIREMENT"
+    }
+  ],
+  "task_type": "edge_case",
+  "task_env_path": "state_bench/domains/customer_support/task_envs/9-hard_edge_post_return_restocking_fee_reversal_denied.json"
+}

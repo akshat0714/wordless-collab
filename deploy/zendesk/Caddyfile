@@ -1,0 +1,25 @@
+{
+  admin off
+}
+
+{$PUBLIC_DOMAIN} {
+  encode zstd gzip
+
+  header {
+    Cache-Control "no-store"
+    Content-Security-Policy "default-src 'none'; frame-ancestors 'none'"
+    Permissions-Policy "camera=(), geolocation=(), microphone=(), payment=(), usb=()"
+    Referrer-Policy "no-referrer"
+    Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    X-Content-Type-Options "nosniff"
+    X-Frame-Options "DENY"
+  }
+
+  # Access logging is deliberately disabled to minimize webhook metadata in
+  # edge logs. Authentication uses the Zendesk-generated X-API-Key header.
+  reverse_proxy zendesk-gateway:8080 {
+    health_uri /health/ready
+    health_interval 30s
+    health_timeout 5s
+  }
+}

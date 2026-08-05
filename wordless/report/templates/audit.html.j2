@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Wordless audit — {{ report.organization }}</title>
+  <style>
+    :root {
+      --ink: #14181f; --ink-soft: #4a5462; --ink-faint: #8b94a3;
+      --paper: #fcfcfb; --surface: #ffffff; --rule: #e3e6ea; --rule-firm: #c9cfd6;
+      --flag: #8b3a2f; --flag-bg: #fbf2f0; --hold: #6b5b2e; --hold-bg: #faf6ec; --ok: #2f5d4f;
+    }
+    * { box-sizing: border-box; }
+    html { background: var(--paper); color: var(--ink); font: 400 15px/1.55 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    body { margin: 0; }
+    a { color: inherit; text-decoration-color: var(--ink-faint); text-underline-offset: .18em; }
+    a:focus-visible { outline: 3px solid var(--ok); outline-offset: 3px; }
+    .page { margin: 0 auto; max-width: 1200px; padding: 0 24px 80px; }
+    .masthead { align-items: end; border-bottom: 1px solid var(--rule-firm); display: grid; gap: 24px; grid-template-columns: repeat(12, 1fr); padding: 24px 0; }
+    .wordmark { font-size: 13px; font-weight: 700; grid-column: span 5; letter-spacing: .14em; text-transform: uppercase; }
+    .run-meta { color: var(--ink-soft); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; font-variant-numeric: tabular-nums; grid-column: span 7; text-align: right; }
+    .hero { border-bottom: 1px solid var(--rule-firm); padding: 64px 0 56px; }
+    .hero-number { color: var(--flag); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 48px; font-variant-numeric: tabular-nums; font-weight: 600; letter-spacing: -.04em; line-height: 1; }
+    .hero h1 { font-size: 24px; font-weight: 600; line-height: 1.28; margin: 16px 0 12px; max-width: 58ch; }
+    .denominator { color: var(--ink-soft); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; font-variant-numeric: tabular-nums; margin: 0; }
+    section { border-bottom: 1px solid var(--rule); padding: 48px 0; }
+    .section-head { display: grid; gap: 24px; grid-template-columns: repeat(12, 1fr); margin-bottom: 24px; }
+    .section-number { color: var(--ink-faint); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; grid-column: span 1; }
+    h2 { font-size: 18px; font-weight: 600; grid-column: span 11; margin: 0; }
+    h3 { font-size: 15px; font-weight: 600; margin: 32px 0 12px; }
+    .measure { max-width: 68ch; }
+    .segment { align-items: center; display: grid; gap: 16px; grid-template-columns: 100px minmax(120px, 1fr) 64px 84px; margin: 12px 0; }
+    .segment-label, .segment-value, .segment-n { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; font-variant-numeric: tabular-nums; }
+    .segment-value, .segment-n { text-align: right; }
+    .bar-track { background: var(--rule); height: 12px; }
+    .bar-fill { background: var(--ink-soft); height: 100%; }
+    .finding-table { border-collapse: collapse; font-size: 13px; width: 100%; }
+    .finding-table th { border-bottom: 1px solid var(--rule-firm); color: var(--ink-soft); font-size: 11px; font-weight: 600; letter-spacing: .06em; padding: 10px 8px; text-align: left; text-transform: uppercase; }
+    .finding-table td { border-bottom: 1px solid var(--rule); padding: 14px 8px; vertical-align: top; }
+    .finding-table th:first-child, .finding-table td:first-child { padding-left: 0; }
+    .finding-table th:last-child, .finding-table td:last-child { padding-right: 0; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric: tabular-nums; }
+    .flag-label { color: var(--flag); font-weight: 600; }
+    .hold-label { color: var(--hold); font-weight: 600; }
+    .ticket-detail { border-top: 1px solid var(--rule-firm); display: grid; gap: 24px; grid-template-columns: 2fr 3fr; padding: 24px 0; }
+    .ticket-detail:last-child { padding-bottom: 0; }
+    .fragment { color: var(--ink-soft); font-style: italic; }
+    .evidence-list { list-style: none; margin: 0; padding: 0; }
+    .evidence-list li { border-bottom: 1px solid var(--rule); padding: 8px 0; }
+    .evidence-list li:last-child { border: 0; }
+    .transcript { list-style: none; margin: 16px 0 0; padding: 0; }
+    .transcript li { border-top: 1px solid var(--rule); display: grid; gap: 12px; grid-template-columns: 136px 1fr; padding: 10px 0; }
+    .transcript-role { color: var(--ink-faint); font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; text-transform: uppercase; }
+    .provenance { color: var(--ink-faint); font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; text-transform: uppercase; }
+    .method-grid { display: grid; gap: 32px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .method-grid p { margin-top: 0; }
+    .risk-row { align-items: center; display: grid; gap: 12px; grid-template-columns: 70px 1fr 70px 90px; margin: 8px 0; }
+    .risk-bar { background: var(--hold-bg); height: 10px; }
+    .risk-bar > span { background: var(--hold); display: block; height: 100%; }
+    .limits { max-width: 68ch; padding-left: 20px; }
+    footer { color: var(--ink-faint); font-size: 12px; padding-top: 24px; }
+    @media (max-width: 720px) {
+      .wordmark, .run-meta { grid-column: 1 / -1; text-align: left; }
+      .segment { grid-template-columns: 80px 1fr 48px; }
+      .segment-n { grid-column: 2 / -1; text-align: left; }
+      .method-grid, .ticket-detail { grid-template-columns: 1fr; }
+      .finding-table { display: block; overflow-x: auto; }
+    }
+    @media print {
+      html { background: #fff; }
+      .page { max-width: none; padding: 0; }
+      a { text-decoration: none; }
+      section, .ticket-detail { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+<main class="page">
+  <header class="masthead">
+    <div class="wordmark">Wordless audit</div>
+    <div class="run-meta">{{ report.organization }} · {{ report.outcomes.analyzed|number }} tickets<br>{{ report.period_start.strftime('%b %Y') }}–{{ report.period_end.strftime('%b %Y') }} · run {{ report.run_date.isoformat() }}</div>
+  </header>
+
+  <div class="hero">
+    {% if report.all_state_degraded %}
+    <div class="hero-number" style="color: var(--hold)">{{ report.outcomes.analyzed|number }}</div>
+    <h1>interactions replayed in degraded text-only mode</h1>
+    <p class="denominator">◇ {{ report.provenance.inferred|number }} of {{ report.outcomes.analyzed|number }} had inferred state · no evidence-backed hypotheses were generated · correctness and disagreement were not estimable</p>
+    {% else %}
+    <div class="hero-number">{{ report.outcomes.disagreements|number }}</div>
+    <h1>{{ report.evidence_headline }}</h1>
+    {% if report.outcomes.evidence_eligible is not none %}
+    <p class="denominator">△ {{ report.outcomes.disagreement_rate|percent }} of {{ report.outcomes.evidence_eligible|number }} evidence-eligible ({{ report.outcomes.analyzed|number }} analyzed) · human-reviewed n={{ report.outcomes.human_reviewed|number }} · eligibility: {{ report.outcomes.evidence_eligibility_method }} · outcome method: {{ report.outcomes.method }}</p>
+    {% else %}
+    <p class="denominator">△ {{ report.outcomes.disagreement_rate|percent }} of {{ report.outcomes.analyzed|number }} analyzed · human-reviewed n={{ report.outcomes.human_reviewed|number }} · method: {{ report.outcomes.method }}</p>
+    {% endif %}
+    {% endif %}
+  </div>
+
+  <section aria-labelledby="who-heading">
+    <div class="section-head"><div class="section-number">01</div><h2 id="who-heading">Who this happens to</h2></div>
+    {% if report.all_state_degraded %}
+    <h3>First-message length distribution</h3>
+    {% else %}
+    <h3>Resolution agreement by first-message length</h3>
+    {% endif %}
+    {% for segment in report.length_segments %}
+    <div class="segment">
+      <div class="segment-label">{{ segment.label }}</div>
+      {% if segment.agreement_rate is none %}
+      <div class="bar-track" aria-hidden="true"><div class="bar-fill" style="width: {{ segment.sample_size / report.outcomes.analyzed * 100 }}%"></div></div>
+      <div class="segment-value">n/e</div>
+      {% else %}
+      <div class="bar-track" aria-hidden="true"><div class="bar-fill" style="width: {{ segment.agreement_rate * 100 }}%"></div></div>
+      <div class="segment-value">{{ segment.agreement_rate|percent0 }}</div>
+      {% endif %}
+      <div class="segment-n">n={{ segment.sample_size|number }}</div>
+    </div>
+    {% endfor %}
+    {% if report.all_state_degraded %}
+    <p class="measure">The bars show the share of all analyzed interactions in each fragment-length segment. Agreement by length is not estimable: every segment had an agreement denominator of zero because no state-backed candidate was generated.</p>
+    {% else %}
+    <p class="measure">Agreement means the recorded resolution appeared among the evidence-first system’s top three candidates. Every rate above includes its full segment denominator. Method: {{ report.length_segments[0].agreement_method }}.</p>
+    {% endif %}
+  </section>
+
+  <section aria-labelledby="tickets-heading">
+    <div class="section-head"><div class="section-number">02</div><h2 id="tickets-heading">The tickets</h2></div>
+    {% if report.findings %}
+    <p class="measure"><span class="flag-label">△ Evidence disagreed.</span> {{ report.findings_intro }}</p>
+    <table class="finding-table">
+      <thead><tr><th>ID</th><th>Closed as</th><th>Evidence indicated</th><th>Provenance</th></tr></thead>
+      <tbody>
+      {% for finding in report.findings %}
+        <tr><td class="mono"><a href="#interaction-{{ finding.interaction_id }}">#{{ finding.interaction_id }}</a></td><td>{{ finding.closed_as }}</td><td>{{ finding.evidence_indicated }}</td><td class="mono">{{ finding.evidence[0].provenance }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="measure"><span class="hold-label">◇ No evidence-backed findings.</span> The replay generated no state-backed hypotheses. An empty findings list does not establish that every recorded resolution was correct.</p>
+    {% endif %}
+    {% for finding in report.findings %}
+    <article class="ticket-detail" id="interaction-{{ finding.interaction_id }}">
+      <div><h3>#{{ finding.interaction_id }} · {{ finding.opened_on.isoformat() }}</h3><p class="fragment">“{{ finding.fragment }}”</p><p><strong>Closed as:</strong> {{ finding.closed_as }}<br><strong>Evidence indicated:</strong> {{ finding.evidence_indicated }}</p></div>
+      <div><h3>Evidence at contact time</h3><ul class="evidence-list">{% for evidence in finding.evidence %}<li><span class="provenance">{{ evidence.provenance }} · {{ evidence.source }}</span><br>{{ evidence.text }}</li>{% endfor %}</ul></div>
+      <div style="grid-column: 1 / -1"><h3>Full redacted interaction</h3><ol class="transcript">{% for line in finding.transcript %}<li><span class="transcript-role">{{ line.author }}<br>{{ line.sent_at.isoformat() }}</span><span>{{ line.text }}</span></li>{% endfor %}</ol></div>
+    </article>
+    {% endfor %}
+  </section>
+
+  <section aria-labelledby="declined-heading">
+    <div class="section-head"><div class="section-number">03</div><h2 id="declined-heading">Where the system declined</h2></div>
+    {% if report.abstention_note %}
+    <p><span class="hold-label">◇ Abstained.</span> {{ report.abstention_note }}</p>
+    {% elif report.all_state_degraded %}
+    <p><span class="hold-label">◇ Abstained.</span> {{ report.outcomes.abstained|number }} of {{ report.outcomes.analyzed|number }} interactions produced no evidence hypothesis because the export supplied no point-in-time system state.</p>
+    {% else %}
+    <p><span class="hold-label">◇ Abstained.</span> {{ report.outcomes.abstained|number }} of {{ report.outcomes.analyzed|number }} interactions produced no accepted replay finding; reasons can include no state-backed hypothesis, the calibrated confidence floor, missing resolution evidence, or judge uncertainty.</p>
+    {% endif %}
+    <h3>Risk–coverage curve</h3>
+    {% if report.risk_coverage %}
+    {% for point in report.risk_coverage %}
+    <div class="risk-row"><span class="mono">{{ point.coverage|percent0 }}</span><div class="risk-bar" aria-hidden="true"><span style="width: {{ point.precision * 100 }}%"></span></div><span class="mono">{{ point.precision|percent0 }}</span><span class="mono">{{ point.correct|number }}/{{ point.selected|number }} correct · n={{ point.total|number }}</span></div>
+    {% endfor %}
+    <p class="measure">Rows show coverage, precision, and the correct/selected numerator and denominator out of {{ report.risk_coverage[0].total|number }} labeled evaluation interactions. Lower coverage means the system declined more cases. Method: {{ report.risk_coverage_method }}.</p>
+    {% else %}
+    <p class="measure"><strong>Not estimable (n=0 labeled predictions).</strong> {{ report.risk_coverage_note }} Method: {{ report.risk_coverage_method }}.</p>
+    {% endif %}
+  </section>
+
+  <section aria-labelledby="method-heading">
+    <div class="section-head"><div class="section-number">04</div><h2 id="method-heading">Method and limits</h2></div>
+    <div class="method-grid">
+      <div><h3>Circumlocution gate</h3><p>{{ report.benchmark.semantic_hits_at_3 }} of {{ report.benchmark.sample_size }} semantic queries placed the gold intent in the top three ({{ report.benchmark.semantic_rate|percent }}), versus {{ report.benchmark.bm25_hits_at_3 }} of {{ report.benchmark.sample_size }} for BM25 ({{ report.benchmark.bm25_rate|percent }}). Method: {{ report.benchmark.method }}.</p></div>
+      <div><h3>State provenance</h3><p>{{ report.provenance.exported|number }} exported, {{ report.provenance.reconstructed|number }} reconstructed, and {{ report.provenance.inferred|number }} inferred, out of {{ report.provenance.total|number }} interactions. {% if report.all_state_degraded %}Every interaction is degraded text-only reconstruction; these results are not blended into an evidence-backed headline.{% else %}Inferred results are degraded text-only evidence.{% endif %} Method: {{ report.provenance.method }}.</p></div>
+      <div><h3>Redaction boundary</h3><p>{{ report.redaction.messages_changed|number }} of {{ report.redaction.messages_processed|number }} messages and {{ report.redaction.text_values_changed|number }} of {{ report.redaction.text_values_processed|number }} scanned text values contained detected PII. Detectors: {{ report.redaction.detectors|join(', ') }}. Entity counts: {% if report.redaction.entity_counts %}{% for entity, count in report.redaction.entity_counts|dictsort %}{{ entity }}={{ count|number }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}none{% endif %}. Method: {{ report.redaction.method }}.</p></div>
+      <div><h3>Judge validation</h3><p>{% if report.judge.sample_size %}The judge matched {{ report.judge.agreements }} of {{ report.judge.sample_size }} validation labels ({{ report.judge.agreement_rate|percent }}). {% if report.judge.cohen_kappa is not none %}Cohen’s κ={{ "%.3f"|format(report.judge.cohen_kappa) }}. {% endif %}{% else %}Not estimable (n=0): no candidate judgments were produced for validation. {% endif %}{% if report.judge.label_source == "synthetic_oracle" %}<strong>Synthetic-oracle validation; not human review.</strong> {% elif report.judge.label_source == "human" %}<strong>Human validation labels.</strong> {% endif %}{{ report.judge.method }}</p></div>
+      {% if report.calibration %}<div><h3>Feasibility operating point</h3><p>{% if report.calibration.development_total %}The frozen split reserved {{ report.calibration.development_total|number }} development records. {% endif %}Calibration selected {{ report.calibration.calibration_selected|number }} of {{ report.calibration.calibration_total|number }} records, with {{ report.calibration.calibration_correct|number }} synthetic-oracle match{% if report.calibration.calibration_correct != 1 %}es{% endif %}{% if report.calibration.calibration_precision is not none %} ({{ report.calibration.calibration_precision|percent }}){% endif %}. The frozen floor selected {{ report.calibration.held_out_selected|number }} of {{ report.calibration.held_out_total|number }} held-out records, with {{ report.calibration.held_out_correct|number }} match{% if report.calibration.held_out_correct != 1 %}es{% endif %}{% if report.calibration.held_out_precision is not none %} ({{ report.calibration.held_out_precision|percent }}){% endif %}. {{ report.calibration.purpose }} Method: {{ report.calibration.method }}</p></div>{% endif %}
+      <div><h3>Reproducibility</h3><p>All inputs, model settings, and randomness are fixed. Module 0 benchmark fingerprint: <span class="mono">{{ report.benchmark.dataset_fingerprint[:12] }}…</span>. Runtime latency is observational and excluded from the byte-stable report.</p></div>
+      {% if report.source_attribution %}<div><h3>Source and license</h3><p>{{ report.source_attribution.citation }} <a href="{{ report.source_attribution.url }}">Dataset record</a>. Licensed <a href="{{ report.source_attribution.license_url }}">{{ report.source_attribution.license_name }}</a>.{% if report.source_attribution.commit %} Pinned commit <span class="mono">{{ report.source_attribution.commit[:12] }}…</span>.{% endif %}{% if report.source_attribution.archive_sha256 %} Archive SHA-256 <span class="mono">{{ report.source_attribution.archive_sha256[:12] }}…</span>.{% endif %}{% if report.source_attribution.files_sha256 %} Pinned source file hashes: {% for name, digest in report.source_attribution.files_sha256|dictsort %}<span class="mono">{{ name }}={{ digest[:12] }}…</span>{% if not loop.last %}; {% endif %}{% endfor %}.{% endif %}</p></div>{% endif %}
+    </div>
+    <h3>What these numbers do not establish</h3>
+    <ul class="limits">{% for limit in report.limits %}<li>{{ limit }}</li>{% endfor %}</ul>
+  </section>
+  <footer>Wordless Audit · local, read-only replay · no customer-system write path{% if report.source_attribution %} · source {% if report.source_attribution.doi %}{{ report.source_attribution.doi }}{% else %}{{ report.source_attribution.title }} {{ report.source_attribution.version }}{% endif %}{% endif %}</footer>
+</main>
+</body>
+</html>

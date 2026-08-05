@@ -1,0 +1,23 @@
+{
+  "task_id": "149-hard_cancel_delivered_pivot_return",
+  "user_id": "cust_003",
+  "now": "2026-07-08T10:00:00",
+  "opening_message": "DO_NOT_LEAK_OPENING_ORACLE",
+  "task_summary": "DO_NOT_LEAK_CANCEL_ORACLE",
+  "user_simulator": {
+    "user_sim_context": "DO_NOT_LEAK_SIMULATOR_CONTEXT",
+    "known_info": [],
+    "unknown_info": [],
+    "task_rules": []
+  },
+  "task_requirements": [
+    {
+      "id": "DO_NOT_LEAK_CANCEL_REQUIREMENT",
+      "kind": "must_not",
+      "requirement": "DO_NOT_LEAK_CANCEL_REQUIREMENT_TEXT"
+    }
+  ],
+  "state_requirements": [],
+  "task_type": "cancel_order",
+  "task_env_path": "state_bench/domains/customer_support/task_envs/149-hard_cancel_delivered_pivot_return.json"
+}

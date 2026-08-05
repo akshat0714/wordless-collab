@@ -1,0 +1,414 @@
+{
+  "version": 1,
+  "authorship": "hand-authored",
+  "domains": {
+    "retail": [
+      {
+        "target": "late_delivery",
+        "description": "An order is still in transit after the promised delivery date.",
+        "variants": ["it should have arrived already", "delivery is taking too long", "past the promised day", "still waiting for the order", "shipment has not arrived on time"]
+      },
+      {
+        "target": "missing_package",
+        "description": "The carrier says an entire package was delivered, but the customer cannot find it.",
+        "variants": ["nothing was at the door", "the whole parcel is gone", "marked delivered but not here", "cannot find the delivered box", "the shipment never showed up"]
+      },
+      {
+        "target": "wrong_item",
+        "description": "The customer received a different product from the one ordered.",
+        "variants": ["this is not what I chose", "a different product arrived", "the contents do not match the order", "you sent somebody else's item", "received the wrong thing"]
+      },
+      {
+        "target": "damaged_item",
+        "description": "A product arrived physically damaged in transit.",
+        "variants": ["it arrived cracked", "the product was broken in the box", "shipping damage", "it came bent or crushed", "the contents arrived torn"]
+      },
+      {
+        "target": "return_request",
+        "description": "The customer wants to send a purchased product back for a return.",
+        "variants": ["I need to send this back", "take the purchase back", "how do I mail it back", "start a return", "I do not want to keep it"]
+      },
+      {
+        "target": "refund_not_received",
+        "description": "A promised retail refund has not reached the customer's payment account.",
+        "variants": ["the money back never arrived", "still waiting for the repayment", "return was processed but no funds", "credit has not appeared", "where is the promised refund"]
+      },
+      {
+        "target": "exchange_request",
+        "description": "The customer wants to swap a purchased product for another size, color, or model.",
+        "variants": ["swap this for another one", "trade it for a different size", "can I get the other color", "replace it with another model", "change this item for one that fits"]
+      },
+      {
+        "target": "cancel_order",
+        "description": "The customer wants an unfulfilled retail order stopped before shipment.",
+        "variants": ["stop the purchase before it ships", "do not send the order", "undo the order", "I no longer want this purchase", "halt fulfillment"]
+      },
+      {
+        "target": "tracking_not_updating",
+        "description": "A shipment's tracking history is stuck or has no recent scans.",
+        "variants": ["the delivery map has not moved", "shipping status is frozen", "no new carrier scan", "tracking shows the same place", "package progress stopped changing"]
+      },
+      {
+        "target": "missing_item_from_order",
+        "description": "Part of a multi-item order is absent even though the rest arrived.",
+        "variants": ["one thing was left out", "the box did not contain everything", "part of my order is missing", "only some products arrived", "an item is absent from the parcel"]
+      },
+      {
+        "target": "defective_product",
+        "description": "A product is present and undamaged but does not operate as intended.",
+        "variants": ["it will not work", "the product does nothing", "it stopped functioning", "not working out of the box", "the device is faulty"]
+      },
+      {
+        "target": "size_fit_issue",
+        "description": "Clothing, footwear, or another sized product does not fit the customer.",
+        "variants": ["this does not fit me", "the size is too small", "it is much too loose", "need a better fitting size", "the measurements are not right"]
+      },
+      {
+        "target": "gift_card_problem",
+        "description": "A store-value or gift card cannot be redeemed or shows the wrong balance.",
+        "variants": ["the present money will not spend", "store credit code is rejected", "voucher balance is wrong", "cannot use the prepaid store card", "gift balance does not work"]
+      },
+      {
+        "target": "promo_code_failed",
+        "description": "A valid promotion or coupon code is rejected at checkout.",
+        "variants": ["the coupon will not apply", "sale code says invalid", "checkout ignored the offer", "promotion is not reducing the price", "discount code does not work"]
+      },
+      {
+        "target": "price_adjustment",
+        "description": "The customer requests the lower price after a recent price drop or advertised match.",
+        "variants": ["give me the new lower price", "match the cheaper amount", "it went on sale after I bought it", "credit the price difference", "honor the advertised price"]
+      },
+      {
+        "target": "warranty_claim",
+        "description": "The customer seeks repair or replacement under a product warranty.",
+        "variants": ["it broke while still covered", "use the maker's guarantee", "covered repair request", "replace it under protection", "the warranty should pay for this"]
+      },
+      {
+        "target": "address_change",
+        "description": "The shipping destination on an order needs to be changed.",
+        "variants": ["send it to a different place", "the delivery location is wrong", "redirect the parcel to my new home", "change where the order is going", "update the shipping destination"]
+      },
+      {
+        "target": "pickup_problem",
+        "description": "A store or curbside pickup order is unavailable or cannot be collected.",
+        "variants": ["the store cannot find my collection order", "curbside handoff did not happen", "nothing was ready at pickup", "I cannot collect the purchase", "pickup desk says it is not there"]
+      },
+      {
+        "target": "out_of_stock",
+        "description": "A desired product or variant is unavailable for purchase because inventory is depleted.",
+        "variants": ["there are none left", "the shelf is empty", "item is unavailable", "when will you have more", "the size I need is sold out"]
+      },
+      {
+        "target": "replacement_request",
+        "description": "The customer wants another unit sent to replace a missing, damaged, or faulty product.",
+        "variants": ["send another one", "I need a new unit", "replace the broken purchase", "ship me one that works", "please provide a substitute item"]
+      }
+    ],
+    "billing": [
+      {
+        "target": "duplicate_charge",
+        "description": "The same purchase appears as two separate successful charges.",
+        "variants": ["the card was billed two times", "money was taken twice", "one purchase appears twice", "there are matching debits", "I paid double for one thing"]
+      },
+      {
+        "target": "unrecognized_charge",
+        "description": "A customer does not recognize a transaction on their statement.",
+        "variants": ["I do not know this payment", "mystery transaction on my card", "this debit is not mine", "unknown merchant amount", "I never made that purchase"]
+      },
+      {
+        "target": "incorrect_amount",
+        "description": "A transaction was processed for a different amount than the customer expected.",
+        "variants": ["you took more than agreed", "the total is wrong", "charged the wrong price", "the debit should be smaller", "payment amount does not match"]
+      },
+      {
+        "target": "refund_not_received",
+        "description": "A promised billing refund has not appeared in the customer's account.",
+        "variants": ["the money back is absent", "still no repayment", "credit never reached my card", "promised funds have not returned", "waiting for reversed payment"]
+      },
+      {
+        "target": "payment_declined",
+        "description": "A payment attempt is rejected and cannot be completed.",
+        "variants": ["the card will not go through", "checkout refuses my payment", "transaction keeps failing", "bank payment is rejected", "cannot complete the purchase"]
+      },
+      {
+        "target": "card_expired",
+        "description": "The saved payment card is no longer valid because its expiration date has passed.",
+        "variants": ["the saved card is too old", "payment plastic is past its date", "need to replace an outdated card", "old card details no longer work", "the card validity ended"]
+      },
+      {
+        "target": "invoice_request",
+        "description": "The customer needs a formal itemized invoice for a transaction or period.",
+        "variants": ["send the itemized bill document", "need paperwork for accounts", "formal list of what I owe", "company payment document", "taxable purchase statement needed"]
+      },
+      {
+        "target": "receipt_request",
+        "description": "The customer needs proof that a particular payment or purchase was completed.",
+        "variants": ["send proof I paid", "need the purchase slip", "confirmation of completed payment", "paper showing the transaction", "payment record for expenses"]
+      },
+      {
+        "target": "subscription_cancellation",
+        "description": "The customer wants recurring paid service ended so future charges stop.",
+        "variants": ["stop taking money every month", "end the recurring plan", "turn off future billing", "I want to leave the paid service", "do not renew this membership"]
+      },
+      {
+        "target": "unexpected_renewal",
+        "description": "A subscription renewed and charged when the customer did not expect it to continue.",
+        "variants": ["it started another term without asking", "charged for a new year unexpectedly", "I thought the plan had ended", "automatic continuation surprised me", "membership rolled over on its own"]
+      },
+      {
+        "target": "trial_charged",
+        "description": "A free trial produced a paid charge earlier than or contrary to the customer's expectation.",
+        "variants": ["the free period took money", "billed during the test period", "trial was supposed to cost nothing", "charged before free access ended", "money taken for a no-cost trial"]
+      },
+      {
+        "target": "payment_method_change",
+        "description": "The customer wants to replace the card or account used for future billing.",
+        "variants": ["use a different card next time", "move future payments to another account", "replace how I pay", "charge the new card", "update the saved payment source"]
+      },
+      {
+        "target": "installment_problem",
+        "description": "A payment plan or installment schedule has the wrong timing, count, or amount.",
+        "variants": ["the split payments are wrong", "monthly parts do not add up", "payment plan took the wrong piece", "scheduled portion failed", "problem with paying in stages"]
+      },
+      {
+        "target": "late_fee_dispute",
+        "description": "The customer contests a fee added for allegedly paying after a deadline.",
+        "variants": ["remove the overdue penalty", "I paid on time but got a fee", "extra charge for being late is wrong", "contest the tardy payment cost", "waive the missed-deadline amount"]
+      },
+      {
+        "target": "tax_error",
+        "description": "Tax on a bill is missing, duplicated, or calculated for the wrong jurisdiction or rate.",
+        "variants": ["the government part is wrong", "sales levy was calculated badly", "wrong local rate on the bill", "tax appears twice", "incorrect taxable total"]
+      },
+      {
+        "target": "discount_missing",
+        "description": "An expected discount is absent from the final billed amount.",
+        "variants": ["the lower price was not applied", "bill ignored my reduction", "expected savings are missing", "member price did not appear", "offer is absent from the total"]
+      },
+      {
+        "target": "credit_balance",
+        "description": "The account has money owed back to the customer as an unused positive credit.",
+        "variants": ["money is sitting on the account", "you owe me the leftover amount", "unused funds remain", "positive account balance", "extra payment should come back"]
+      },
+      {
+        "target": "payout_missing",
+        "description": "An expected transfer of earnings or funds to the customer has not arrived.",
+        "variants": ["my earnings never came", "transfer to my bank is absent", "still waiting for money you sent", "expected deposit did not land", "where is my disbursement"]
+      },
+      {
+        "target": "currency_conversion_issue",
+        "description": "A payment used an unexpected exchange rate or was charged in the wrong currency.",
+        "variants": ["the foreign money math is wrong", "converted amount is too high", "charged in a different currency", "bad exchange rate", "international price does not match"]
+      },
+      {
+        "target": "billing_address_update",
+        "description": "The address associated with invoices or a payment method needs to change.",
+        "variants": ["put my new home on the bill", "card address is outdated", "change where invoices say I live", "update payment location details", "billing records have the old address"]
+      }
+    ],
+    "education": [
+      {
+        "target": "transcript_request",
+        "description": "A learner needs an official record of courses, credits, and grades.",
+        "variants": ["send my school record", "paper listing every class and mark", "official academic history", "record for another college", "need my grades document"]
+      },
+      {
+        "target": "enrollment_verification",
+        "description": "A learner needs an official letter proving current or past enrollment.",
+        "variants": ["prove I attend this school", "letter showing I am a student", "confirmation for my employer", "proof of study document", "verify that I am enrolled"]
+      },
+      {
+        "target": "password_reset",
+        "description": "A learner cannot access an education portal because the password must be reset.",
+        "variants": ["I forgot the secret word", "make a new sign-in key", "cannot enter the student portal", "reset my school login", "the old password does not work"]
+      },
+      {
+        "target": "course_registration",
+        "description": "A learner wants to add or enroll in a class.",
+        "variants": ["put me into this class", "add the course to my term", "let me join the lecture", "sign up for a section", "enroll me in the subject"]
+      },
+      {
+        "target": "course_withdrawal",
+        "description": "A learner wants to drop a class after enrolling.",
+        "variants": ["take me out of this class", "remove the course from my term", "I need to leave the subject", "drop this section", "stop my enrollment in the class"]
+      },
+      {
+        "target": "tuition_payment_problem",
+        "description": "A tuition or school-fee payment is incorrect, rejected, or not posted.",
+        "variants": ["school payment has a problem", "my tuition money is missing", "fee payment did not post", "cannot pay for the term", "education bill payment is wrong"]
+      },
+      {
+        "target": "financial_aid_status",
+        "description": "A learner wants to know the decision or progress of a grant, loan, or aid application.",
+        "variants": ["has my school money help been decided", "waiting on grant news", "loan application progress", "where is my aid decision", "funding status for the term"]
+      },
+      {
+        "target": "grade_dispute",
+        "description": "A learner believes a recorded score or final grade is incorrect.",
+        "variants": ["my mark is wrong", "the recorded score does not match", "contest the final result", "teacher entered the wrong grade", "ask for a score review"]
+      },
+      {
+        "target": "assignment_submission_problem",
+        "description": "Coursework cannot be uploaded or is incorrectly shown as not submitted.",
+        "variants": ["the homework will not upload", "project says missing after I sent it", "cannot turn in my work", "course site rejected the file", "submission did not register"]
+      },
+      {
+        "target": "exam_reschedule",
+        "description": "A learner needs to take an examination at a different date or time.",
+        "variants": ["move my test to another day", "I cannot sit the exam then", "change the test appointment", "need a later examination time", "arrange another test date"]
+      },
+      {
+        "target": "diploma_replacement",
+        "description": "A graduate needs another copy of a lost or damaged diploma.",
+        "variants": ["my graduation paper is gone", "replace the degree document", "need another completion scroll", "the certificate from graduation was damaged", "send a new diploma copy"]
+      },
+      {
+        "target": "student_id_replacement",
+        "description": "A learner needs a new campus identification card because the old one was lost, stolen, or damaged.",
+        "variants": ["my campus card is gone", "replace the card with my picture", "need a new school identity card", "student badge was stolen", "the card for buildings broke"]
+      },
+      {
+        "target": "prerequisite_override",
+        "description": "A learner requests permission to enter a course despite an unmet or unrecognized prerequisite.",
+        "variants": ["let me in without the earlier class", "waive the course before this one", "system does not see my prerequisite", "permission past the enrollment block", "approve me despite the required class"]
+      },
+      {
+        "target": "transfer_credit_review",
+        "description": "A learner asks the school to evaluate coursework completed at another institution for credit.",
+        "variants": ["count classes from my old school", "review outside coursework", "will my previous credits carry over", "evaluate the courses I took elsewhere", "apply old college work here"]
+      },
+      {
+        "target": "graduation_application",
+        "description": "A learner wants to apply or confirm eligibility to graduate.",
+        "variants": ["tell the school I am ready to finish", "apply to receive my degree", "start the completion process", "submit intent to graduate", "check that I can finish this term"]
+      },
+      {
+        "target": "attendance_correction",
+        "description": "A learner asks to correct an absence or attendance record.",
+        "variants": ["I was there but marked away", "fix the class presence record", "remove an incorrect absence", "teacher says I missed class when I attended", "attendance entry is wrong"]
+      },
+      {
+        "target": "accessibility_accommodation",
+        "description": "A learner requests disability-related access support or an approved adjustment for study or assessment.",
+        "variants": ["I need extra time for access reasons", "arrange disability support", "make the class usable for me", "approved learning adjustment", "help with an access need"]
+      },
+      {
+        "target": "class_schedule_request",
+        "description": "A learner needs the dates, times, rooms, or section list for classes.",
+        "variants": ["when and where are my classes", "send the term timetable", "need my lecture times", "show the room list", "what is my class calendar"]
+      },
+      {
+        "target": "account_hold",
+        "description": "An administrative restriction on a learner's account is blocking registration, records, or graduation.",
+        "variants": ["something on my record blocks me", "remove the administrative stop", "school account restriction", "cannot register because of a block", "what is preventing access to records"]
+      },
+      {
+        "target": "certificate_request",
+        "description": "A learner needs a certificate showing completion of a course, program, or training.",
+        "variants": ["paper saying I finished the course", "proof of program completion", "send my training document", "need a completion certificate", "record that I passed the program"]
+      }
+    ],
+    "account": [
+      {
+        "target": "password_reset",
+        "description": "The customer needs to replace a forgotten or nonworking account password.",
+        "variants": ["forgot the secret word", "make a new sign-in key", "cannot enter with the old password", "help me set new login words", "reset the thing I type after my name"]
+      },
+      {
+        "target": "account_locked",
+        "description": "The account is temporarily inaccessible after failed attempts or a security restriction.",
+        "variants": ["too many tries shut me out", "the account door is closed", "sign-in says access is locked", "I am blocked from entering", "unlock my account"]
+      },
+      {
+        "target": "email_change",
+        "description": "The email address associated with the account needs to be updated.",
+        "variants": ["use my new electronic mailbox", "old email is gone", "move the account to another email", "change where account mail goes", "replace the sign-in email"]
+      },
+      {
+        "target": "phone_number_change",
+        "description": "The telephone number associated with the account needs to be updated.",
+        "variants": ["use my new mobile digits", "old phone number is gone", "replace the number on my profile", "texts should go to another phone", "update my contact number"]
+      },
+      {
+        "target": "two_factor_problem",
+        "description": "A one-time verification code or authenticator step prevents sign-in.",
+        "variants": ["the little login number never comes", "authenticator digits are rejected", "stuck at the second sign-in step", "cannot receive the one-time code", "verification prompt will not pass"]
+      },
+      {
+        "target": "identity_verification",
+        "description": "The customer cannot complete a check intended to prove their identity.",
+        "variants": ["the system will not accept proof I am me", "identity check keeps failing", "document verification rejected", "cannot pass the person check", "need help confirming who I am"]
+      },
+      {
+        "target": "delete_account",
+        "description": "The customer wants the account permanently removed.",
+        "variants": ["erase my profile for good", "remove everything and close it", "I want this account gone", "permanently end my profile", "delete my presence here"]
+      },
+      {
+        "target": "reactivate_account",
+        "description": "The customer wants a previously closed or disabled account restored.",
+        "variants": ["bring my old profile back", "turn the closed account on again", "restore my access", "reopen what I deactivated", "make the dormant account usable"]
+      },
+      {
+        "target": "username_recovery",
+        "description": "The customer cannot remember the username or handle required to sign in.",
+        "variants": ["forgot the name I enter first", "what is my sign-in name", "help find my account handle", "cannot remember the word before the password", "recover my login identifier"]
+      },
+      {
+        "target": "profile_name_change",
+        "description": "The customer's displayed personal name needs to be corrected or updated.",
+        "variants": ["the name people see is wrong", "change my displayed label", "update my name after marriage", "correct the spelling on my profile", "show a different personal name"]
+      },
+      {
+        "target": "notification_preferences",
+        "description": "The customer wants to change which account alerts or messages they receive.",
+        "variants": ["stop sending these notices", "choose which alerts reach me", "turn off marketing messages", "change message settings", "only send important updates"]
+      },
+      {
+        "target": "privacy_request",
+        "description": "The customer requests access to, a copy of, or information about personal data held on the account.",
+        "variants": ["show everything you know about me", "send a copy of my personal information", "what data do you keep", "I want my stored records", "request my privacy file"]
+      },
+      {
+        "target": "security_alert",
+        "description": "The customer received an account security warning and needs to understand or resolve it.",
+        "variants": ["why did I get this safety warning", "account danger notice", "security message needs attention", "an alert says my account is at risk", "help with the protection warning"]
+      },
+      {
+        "target": "suspicious_login",
+        "description": "A sign-in appears to have come from an unknown person, place, or device.",
+        "variants": ["someone else entered my account", "unknown device signed in", "login from a place I have never been", "that access was not me", "stranger may have used my profile"]
+      },
+      {
+        "target": "device_removal",
+        "description": "The customer wants a remembered or authorized device disconnected from the account.",
+        "variants": ["remove my old phone from the list", "sign out the lost laptop", "forget a connected device", "disconnect hardware I no longer own", "revoke one device's access"]
+      },
+      {
+        "target": "permission_problem",
+        "description": "The customer cannot use an account feature because their role or access rights are wrong.",
+        "variants": ["I am not allowed into the feature", "the button says I lack access", "wrong role on the account", "give me rights to this area", "permission blocks what I need"]
+      },
+      {
+        "target": "linked_account_problem",
+        "description": "Connecting, disconnecting, or using an external account or profile is failing.",
+        "variants": ["the other profile will not connect", "cannot unlink the outside account", "connection between my accounts broke", "external sign-in is attached to the wrong profile", "linking another service fails"]
+      },
+      {
+        "target": "age_verification",
+        "description": "The customer cannot complete an age or date-of-birth eligibility check.",
+        "variants": ["the system does not believe how old I am", "birthday check failed", "prove I am old enough", "age gate will not let me pass", "date of birth verification problem"]
+      },
+      {
+        "target": "login_loop",
+        "description": "Sign-in repeatedly redirects the customer back to the login screen without granting access.",
+        "variants": ["sign-in sends me back to the beginning", "I enter details and see the same page", "login goes around in circles", "keeps asking me to sign in again", "cannot get past the entry screen"]
+      },
+      {
+        "target": "account_merge",
+        "description": "The customer wants two duplicate profiles combined into one account.",
+        "variants": ["put my two profiles together", "combine duplicate accounts", "move both histories into one place", "join the old and new profile", "I accidentally have two accounts"]
+      }
+    ]
+  }
+}

@@ -1,0 +1,287 @@
+name: wordless-zendesk
+
+x-hardened-service: &hardened-service
+  read_only: true
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true
+  init: true
+
+x-json-logging: &json-logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: "5"
+
+services:
+  caddy:
+    image: ${CADDY_IMAGE:-caddy:2.11.4-alpine}
+    restart: unless-stopped
+    read_only: true
+    cap_drop:
+      - ALL
+    # The official image starts as root to bind 80/443. No application service
+    # runs as root; Caddy receives only the bind-service capability.
+    cap_add:
+      - NET_BIND_SERVICE
+    security_opt:
+      - no-new-privileges:true
+    init: true
+    pids_limit: 128
+    environment:
+      PUBLIC_DOMAIN: ${PUBLIC_DOMAIN:?Run bootstrap.py to create .env.production}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=32m
+    depends_on:
+      zendesk-gateway:
+        condition: service_healthy
+    networks:
+      - edge
+    logging: *json-logging
+
+  zendesk-gateway:
+    <<: *hardened-service
+    build:
+      context: ../..
+      dockerfile: services/zendesk-gateway/Dockerfile
+    image: ${ZENDESK_GATEWAY_IMAGE:-wordless-zendesk-gateway:pilot}
+    restart: unless-stopped
+    pids_limit: 256
+    stop_grace_period: 30s
+    environment:
+      NODE_ENV: production
+      PRODUCT_MODE: customer_clarify
+      GATEWAY_HOST: 0.0.0.0
+      PORT: "8080"
+      GATEWAY_STORE: postgres
+      DATABASE_URL_FILE: /run/secrets/database_url
+      INSTALLATIONS_JSON_FILE: /run/secrets/installations_json
+      WORDLESS_BASE_URL: http://wordless-api:8001
+      WORDLESS_ALLOW_PRIVATE_HTTP: "true"
+      OUTBOX_DELIVERY_MODE: zendesk
+      EVIDENCE_RESOLVER_MODE: http
+      EVIDENCE_RESOLVER_URL: ${EVIDENCE_RESOLVER_URL:?Run bootstrap.py to create .env.production}
+      EVIDENCE_RESOLVER_ALLOW_PRIVATE_HTTP: "false"
+      EVIDENCE_RESOLVER_SECRET_REF: EVIDENCE_RESOLVER_SHARED_SECRET
+      EVIDENCE_RESOLVER_SHARED_SECRET_FILE: /run/secrets/evidence_resolver_shared_secret
+      ZENDESK_WEBHOOK_SECRET_FILE: /run/secrets/zendesk_webhook_secret
+      ZENDESK_KEY_ID_FILE: /run/secrets/zendesk_key_id
+      ZENDESK_KEY_SECRET_FILE: /run/secrets/zendesk_key_secret
+      CHOICE_SIGNING_SECRET_FILE: /run/secrets/choice_signing_secret
+      WORDLESS_API_KEY_FILE: /run/secrets/wordless_api_key
+      WORDLESS_SIGNING_SECRET_FILE: /run/secrets/wordless_signing_secret
+      BODY_MAX_BYTES: "1048576"
+      WEBHOOK_CLOCK_SKEW_SECONDS: "300"
+      WEBHOOK_PROCESS_TIMEOUT_MS: "25000"
+      ZENDESK_TIMEOUT_MS: "10000"
+      EVIDENCE_RESOLVER_TIMEOUT_MS: "5000"
+      SUPPORTED_LOCALE_PREFIXES: ${SUPPORTED_LOCALE_PREFIXES:-en}
+      REQUIRE_KNOWN_LOCALE: ${REQUIRE_KNOWN_LOCALE:-true}
+      CHOICE_TTL_HOURS: ${CHOICE_TTL_HOURS:-1}
+      OUTBOX_POLL_MS: "500"
+      OUTBOX_LEASE_MS: "30000"
+      OUTBOX_MAX_ATTEMPTS: "10"
+      SHUTDOWN_GRACE_MS: "15000"
+      RETENTION_DAYS: ${RETENTION_DAYS:-30}
+      CLEANUP_INTERVAL_MS: "3600000"
+    secrets:
+      - database_url
+      - installations_json
+      - evidence_resolver_shared_secret
+      - zendesk_webhook_secret
+      - zendesk_key_id
+      - zendesk_key_secret
+      - choice_signing_secret
+      - wordless_api_key
+      - wordless_signing_secret
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=64m
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      wordless-api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:8080/health/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+    networks:
+      - edge
+      - backend
+    logging: *json-logging
+
+  migrate:
+    <<: *hardened-service
+    build:
+      context: ../..
+      dockerfile: services/zendesk-gateway/Dockerfile
+    image: ${ZENDESK_GATEWAY_IMAGE:-wordless-zendesk-gateway:pilot}
+    restart: "no"
+    pids_limit: 128
+    command:
+      - node
+      - dist/migrate.js
+    environment:
+      DATABASE_URL_FILE: /run/secrets/database_url
+    secrets:
+      - database_url
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=32m
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - backend
+    logging: *json-logging
+
+  wordless-api:
+    <<: *hardened-service
+    build:
+      context: ../..
+      dockerfile: deploy/wordless-api/Dockerfile
+    image: ${WORDLESS_API_IMAGE:-wordless-api:pilot}
+    restart: unless-stopped
+    pids_limit: 512
+    stop_grace_period: 30s
+    environment:
+      HOME: /srv/wordless
+      XDG_CACHE_HOME: /srv/wordless/cache
+      HF_HOME: /srv/wordless/cache/huggingface
+      HF_HUB_DISABLE_XET: "1"
+      WORDLESS_REALTIME_DEV_MODE: "false"
+      WORDLESS_REALTIME_WORKSPACE: /srv/wordless
+      WORDLESS_REALTIME_DATABASE_PATH: realtime.sqlite3
+      WORDLESS_REALTIME_MODEL_CACHE_DIR: cache/embeddings
+      WORDLESS_REALTIME_OFFLINE: ${WORDLESS_OFFLINE:-false}
+      WORDLESS_REALTIME_EMBED_MODEL_ID: ${WORDLESS_EMBED_MODEL_ID:-sentence-transformers/all-MiniLM-L6-v2}
+      WORDLESS_REALTIME_EMBED_MODEL_REVISION: ${WORDLESS_EMBED_MODEL_REVISION:-1110a243fdf4706b3f48f1d95db1a4f5529b4d41}
+      WORDLESS_REALTIME_THRESHOLD: ${WORDLESS_THRESHOLD:?Run bootstrap.py to create .env.production}
+      WORDLESS_REALTIME_THRESHOLD_VERSION: ${WORDLESS_THRESHOLD_VERSION:?Run bootstrap.py to create .env.production}
+      WORDLESS_REALTIME_MAX_BODY_BYTES: "262144"
+      WORDLESS_REALTIME_MAX_JSON_DEPTH: "12"
+      WORDLESS_REALTIME_RATE_LIMIT_PER_MINUTE: ${WORDLESS_RATE_LIMIT_PER_MINUTE:-120}
+      WORDLESS_REALTIME_MAX_INFERENCE_CONCURRENCY: ${WORDLESS_MAX_INFERENCE_CONCURRENCY:-4}
+      WORDLESS_REALTIME_SIGNATURE_TOLERANCE_SECONDS: "300"
+      WORDLESS_REALTIME_MAX_FUTURE_OBSERVED_SECONDS: "300"
+      WORDLESS_REALTIME_REQUIRE_SIGNATURES: "true"
+      WORDLESS_REALTIME_PENDING_TIMEOUT_SECONDS: "300"
+      WORDLESS_REALTIME_RETENTION_DAYS: ${RETENTION_DAYS:-30}
+      WORDLESS_REALTIME_CLEANUP_INTERVAL_SECONDS: "3600"
+      WORDLESS_REALTIME_TENANTS_JSON_FILE: /run/secrets/wordless_tenants_json
+      WORDLESS_REALTIME_API_KEY_PEPPER_FILE: /run/secrets/wordless_api_key_pepper
+    secrets:
+      - wordless_tenants_json
+      - wordless_api_key_pepper
+    volumes:
+      - wordless-data:/srv/wordless
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=256m
+    networks:
+      - backend
+      - model-egress
+    logging: *json-logging
+
+  postgres:
+    image: ${POSTGRES_IMAGE:-postgres:17.10-alpine3.23}
+    restart: unless-stopped
+    read_only: true
+    # The official entrypoint starts as root only to initialize/chown a fresh
+    # named volume, then execs PostgreSQL as its unprivileged postgres user.
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETGID
+      - SETUID
+    security_opt:
+      - no-new-privileges:true
+    # The image entrypoint already execs postgres. Docker's injected tini
+    # cannot forward stop signals after the child drops privileges when every
+    # capability is removed, so an additional init process is unsafe here.
+    pids_limit: 256
+    stop_grace_period: 60s
+    shm_size: 256mb
+    environment:
+      POSTGRES_DB: wordless_gateway
+      POSTGRES_USER: wordless_gateway
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256 --auth-local=scram-sha-256
+    secrets:
+      - postgres_password
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=64m
+      - /var/run/postgresql:rw,noexec,nosuid,nodev,size=16m,uid=70,gid=70,mode=0770
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"
+      interval: 10s
+      timeout: 5s
+      start_period: 10s
+      retries: 10
+    networks:
+      - backend
+    logging: *json-logging
+
+networks:
+  edge: {}
+  backend:
+    internal: true
+  model-egress: {}
+
+volumes:
+  postgres-data:
+    name: wordless-zendesk-postgres-data
+  wordless-data:
+    name: wordless-zendesk-wordless-data
+  caddy-data:
+    name: wordless-zendesk-caddy-data
+  caddy-config:
+    name: wordless-zendesk-caddy-config
+
+secrets:
+  postgres_password:
+    file: ./secrets/postgres_password
+  database_url:
+    file: ./secrets/database_url
+  installations_json:
+    file: ./secrets/installations.json
+  evidence_resolver_shared_secret:
+    file: ./secrets/evidence_resolver_shared_secret
+  zendesk_webhook_secret:
+    file: ./secrets/zendesk_webhook_secret
+  zendesk_key_id:
+    file: ./secrets/zendesk_key_id
+  zendesk_key_secret:
+    file: ./secrets/zendesk_key_secret
+  choice_signing_secret:
+    file: ./secrets/choice_signing_secret
+  wordless_api_key:
+    file: ./secrets/wordless_api_key
+  wordless_signing_secret:
+    file: ./secrets/wordless_signing_secret
+  wordless_tenants_json:
+    file: ./secrets/wordless_tenants.json
+  wordless_api_key_pepper:
+    file: ./secrets/wordless_api_key_pepper

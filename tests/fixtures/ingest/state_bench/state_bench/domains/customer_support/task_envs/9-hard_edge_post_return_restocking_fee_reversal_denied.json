@@ -1,0 +1,29 @@
+{
+  "products": [],
+  "orders": [
+    {
+      "order_id": "ORD-7305",
+      "customer_id": "cust_002",
+      "status": "fully_returned",
+      "shipping_status": "lost",
+      "delivery_date": "2026-07-01T12:00:00",
+      "delivery_promised_date": "2026-07-01T18:00:00"
+    },
+    {
+      "order_id": "ORD-OTHER",
+      "customer_id": "cust_999",
+      "status": "shipped",
+      "shipping_status": "lost",
+      "delivery_date": null,
+      "delivery_promised_date": "2026-07-01T18:00:00"
+    }
+  ],
+  "order_items": [],
+  "customers": [
+    {
+      "customer_id": "cust_002",
+      "name": "Fixture Customer"
+    }
+  ],
+  "warranties": []
+}

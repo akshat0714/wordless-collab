@@ -1,0 +1,6 @@
+.env.production
+secrets/
+backups/
+*.dump
+*.tar.gz
+*.tar.age

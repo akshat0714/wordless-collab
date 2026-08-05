@@ -1,0 +1,21 @@
+{
+  "products": [],
+  "orders": [
+    {
+      "order_id": "ORD-7262",
+      "customer_id": "cust_003",
+      "status": "processing",
+      "shipping_status": "processing",
+      "delivery_date": null,
+      "delivery_promised_date": "2026-06-05T18:00:00"
+    }
+  ],
+  "order_items": [],
+  "customers": [
+    {
+      "customer_id": "cust_003",
+      "name": "Alice Smith"
+    }
+  ],
+  "warranties": []
+}

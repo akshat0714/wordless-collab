@@ -1,0 +1,128 @@
+{"id":"c001","fragment":"the box that should be outside is not there","target":"missing_package","category":"object_circumlocution","domain":"retail"}
+{"id":"c002","fragment":"the thing inside is not the one from the picture","target":"wrong_item","category":"object_circumlocution","domain":"retail"}
+{"id":"c003","fragment":"the one in the parcel came with a split down it","target":"damaged_item","category":"object_circumlocution","domain":"retail"}
+{"id":"c004","fragment":"need the sticky paper that sends it back","target":"return_request","category":"object_circumlocution","domain":"retail"}
+{"id":"c005","fragment":"the money that comes after sending it back never showed","target":"refund_not_received","category":"object_circumlocution","domain":"retail"}
+{"id":"c006","fragment":"the thing I press to make toast does nothing","target":"defective_product","category":"object_circumlocution","domain":"retail"}
+{"id":"c007","fragment":"the present with spending numbers says empty","target":"gift_card_problem","category":"object_circumlocution","domain":"retail"}
+{"id":"c008","fragment":"the cover-it-if-it-breaks paper should still count","target":"warranty_claim","category":"object_circumlocution","domain":"retail"}
+{"id":"c009","fragment":"need the paper that lists each thing our company owes for","target":"invoice_request","category":"object_circumlocution","domain":"billing"}
+{"id":"c010","fragment":"where is the paper that proves I paid","target":"receipt_request","category":"object_circumlocution","domain":"billing"}
+{"id":"c011","fragment":"the money line for one meal is there two times","target":"duplicate_charge","category":"object_circumlocution","domain":"billing"}
+{"id":"c012","fragment":"there is a money line with a shop I do not know","target":"unrecognized_charge","category":"object_circumlocution","domain":"billing"}
+{"id":"c013","fragment":"the coming-back money is not on my card","target":"refund_not_received","category":"object_circumlocution","domain":"billing"}
+{"id":"c014","fragment":"the extra money sitting in my account needs to come to me","target":"credit_balance","category":"object_circumlocution","domain":"billing"}
+{"id":"c015","fragment":"use the other plastic one for next month","target":"payment_method_change","category":"object_circumlocution","domain":"billing"}
+{"id":"c016","fragment":"the place printed on money papers is my old house","target":"billing_address_update","category":"object_circumlocution","domain":"billing"}
+{"id":"c017","fragment":"the paper with every class and mark for my new school","target":"transcript_request","category":"object_circumlocution","domain":"education"}
+{"id":"c018","fragment":"need the letter that says I study here for my job","target":"enrollment_verification","category":"object_circumlocution","domain":"education"}
+{"id":"c019","fragment":"the graduation paper that hangs on the wall was ruined","target":"diploma_replacement","category":"object_circumlocution","domain":"education"}
+{"id":"c020","fragment":"the picture card that opens the library is gone","target":"student_id_replacement","category":"object_circumlocution","domain":"education"}
+{"id":"c021","fragment":"is there news on the money-help form for school","target":"financial_aid_status","category":"object_circumlocution","domain":"education"}
+{"id":"c022","fragment":"where is the page that tells rooms and times","target":"class_schedule_request","category":"object_circumlocution","domain":"education"}
+{"id":"c023","fragment":"need the paper that says I finished the training","target":"certificate_request","category":"object_circumlocution","domain":"education"}
+{"id":"c024","fragment":"what is the thing on my school record stopping every form","target":"account_hold","category":"object_circumlocution","domain":"education"}
+{"id":"c025","fragment":"forgot the name word that goes before the secret word","target":"username_recovery","category":"object_circumlocution","domain":"account"}
+{"id":"c026","fragment":"the little number my phone should give me never comes","target":"two_factor_problem","category":"object_circumlocution","domain":"account"}
+{"id":"c027","fragment":"the picture paper to show I am me keeps being refused","target":"identity_verification","category":"object_circumlocution","domain":"account"}
+{"id":"c028","fragment":"the electronic mailbox tied to this is one I cannot open","target":"email_change","category":"object_circumlocution","domain":"account"}
+{"id":"c029","fragment":"the digits where you send little messages are old","target":"phone_number_change","category":"object_circumlocution","domain":"account"}
+{"id":"c030","fragment":"I want the file of everything this place knows about me","target":"privacy_request","category":"object_circumlocution","domain":"account"}
+{"id":"c031","fragment":"the danger notice by my profile will not go away","target":"security_alert","category":"object_circumlocution","domain":"account"}
+{"id":"c032","fragment":"the old pocket screen still shown as allowed is not mine now","target":"device_removal","category":"object_circumlocution","domain":"account"}
+{"id":"c033","fragment":"make the thing I just bought not happen","target":"cancel_order","category":"action_circumlocution","domain":"retail"}
+{"id":"c034","fragment":"take this size and give me the bigger one","target":"exchange_request","category":"action_circumlocution","domain":"retail"}
+{"id":"c035","fragment":"make the box go to my new place instead","target":"address_change","category":"action_circumlocution","domain":"retail"}
+{"id":"c036","fragment":"send me another that actually turns on","target":"replacement_request","category":"action_circumlocution","domain":"retail"}
+{"id":"c037","fragment":"make what I paid match today's lower number","target":"price_adjustment","category":"action_circumlocution","domain":"retail"}
+{"id":"c038","fragment":"help me put this back with you","target":"return_request","category":"action_circumlocution","domain":"retail"}
+{"id":"c039","fragment":"make it work again without me paying because it is covered","target":"warranty_claim","category":"action_circumlocution","domain":"retail"}
+{"id":"c040","fragment":"make it ready so I can take it from the counter","target":"pickup_problem","category":"action_circumlocution","domain":"retail"}
+{"id":"c041","fragment":"make the monthly taking stop","target":"subscription_cancellation","category":"action_circumlocution","domain":"billing"}
+{"id":"c042","fragment":"make the card let this purchase through","target":"payment_declined","category":"action_circumlocution","domain":"billing"}
+{"id":"c043","fragment":"take next month's money from my other card","target":"payment_method_change","category":"action_circumlocution","domain":"billing"}
+{"id":"c044","fragment":"remove the extra for supposedly being slow","target":"late_fee_dispute","category":"action_circumlocution","domain":"billing"}
+{"id":"c045","fragment":"change the total to what we agreed","target":"incorrect_amount","category":"action_circumlocution","domain":"billing"}
+{"id":"c046","fragment":"undo the year it started again by itself","target":"unexpected_renewal","category":"action_circumlocution","domain":"billing"}
+{"id":"c047","fragment":"split this into the smaller monthly pieces","target":"installment_problem","category":"action_circumlocution","domain":"billing"}
+{"id":"c048","fragment":"put my new home on future money papers","target":"billing_address_update","category":"action_circumlocution","domain":"billing"}
+{"id":"c049","fragment":"put me in the morning section","target":"course_registration","category":"action_circumlocution","domain":"education"}
+{"id":"c050","fragment":"take this class off my term","target":"course_withdrawal","category":"action_circumlocution","domain":"education"}
+{"id":"c051","fragment":"make me a new way into the student site","target":"password_reset","category":"action_circumlocution","domain":"education"}
+{"id":"c052","fragment":"move the big test to after my operation","target":"exam_reschedule","category":"action_circumlocution","domain":"education"}
+{"id":"c053","fragment":"let me past the class-before-this block","target":"prerequisite_override","category":"action_circumlocution","domain":"education"}
+{"id":"c054","fragment":"make my old school classes count here","target":"transfer_credit_review","category":"action_circumlocution","domain":"education"}
+{"id":"c055","fragment":"start the steps so I can finish this spring","target":"graduation_application","category":"action_circumlocution","domain":"education"}
+{"id":"c056","fragment":"give me more time so I can read the questions","target":"accessibility_accommodation","category":"action_circumlocution","domain":"education"}
+{"id":"c057","fragment":"let me choose new secret words to get in","target":"password_reset","category":"action_circumlocution","domain":"account"}
+{"id":"c058","fragment":"make this profile disappear for good","target":"delete_account","category":"action_circumlocution","domain":"account"}
+{"id":"c059","fragment":"turn the profile I closed back on","target":"reactivate_account","category":"action_circumlocution","domain":"account"}
+{"id":"c060","fragment":"put both versions of me into one profile","target":"account_merge","category":"action_circumlocution","domain":"account"}
+{"id":"c061","fragment":"kick the lost tablet out of my profile","target":"device_removal","category":"action_circumlocution","domain":"account"}
+{"id":"c062","fragment":"make the sales messages stop coming","target":"notification_preferences","category":"action_circumlocution","domain":"account"}
+{"id":"c063","fragment":"let my role open the reports page","target":"permission_problem","category":"action_circumlocution","domain":"account"}
+{"id":"c064","fragment":"separate my work profile from this one","target":"linked_account_problem","category":"action_circumlocution","domain":"account"}
+{"id":"c065","fragment":"my order seems parked somewhere","target":"late_delivery","category":"semantic_substitution","domain":"retail"}
+{"id":"c066","fragment":"the delivery clock is frozen since Tuesday","target":"tracking_not_updating","category":"semantic_substitution","domain":"retail"}
+{"id":"c067","fragment":"you sent the cousin of what I chose","target":"wrong_item","category":"semantic_substitution","domain":"retail"}
+{"id":"c068","fragment":"the shoes are child size on my feet","target":"size_fit_issue","category":"semantic_substitution","domain":"retail"}
+{"id":"c069","fragment":"the sale password is being rejected","target":"promo_code_failed","category":"semantic_substitution","domain":"retail"}
+{"id":"c070","fragment":"the shelf says sleeping for the blue one","target":"out_of_stock","category":"semantic_substitution","domain":"retail"}
+{"id":"c071","fragment":"the parcel forgot the charger","target":"missing_item_from_order","category":"semantic_substitution","domain":"retail"}
+{"id":"c072","fragment":"the return money is still traveling","target":"refund_not_received","category":"semantic_substitution","domain":"retail"}
+{"id":"c073","fragment":"my statement has twins for the same coffee","target":"duplicate_charge","category":"semantic_substitution","domain":"billing"}
+{"id":"c074","fragment":"there is a stranger payment on my card","target":"unrecognized_charge","category":"semantic_substitution","domain":"billing"}
+{"id":"c075","fragment":"the government slice on this bill is too big","target":"tax_error","category":"semantic_substitution","domain":"billing"}
+{"id":"c076","fragment":"my member price vanished at checkout","target":"discount_missing","category":"semantic_substitution","domain":"billing"}
+{"id":"c077","fragment":"the free sample billed me","target":"trial_charged","category":"semantic_substitution","domain":"billing"}
+{"id":"c078","fragment":"the foreign money translation added too much","target":"currency_conversion_issue","category":"semantic_substitution","domain":"billing"}
+{"id":"c079","fragment":"the old card has gone stale","target":"card_expired","category":"semantic_substitution","domain":"billing"}
+{"id":"c080","fragment":"my earnings transfer is lost","target":"payout_missing","category":"semantic_substitution","domain":"billing"}
+{"id":"c081","fragment":"need my school report card for all years","target":"transcript_request","category":"semantic_substitution","domain":"education"}
+{"id":"c082","fragment":"the school rent payment is not showing","target":"tuition_payment_problem","category":"semantic_substitution","domain":"education"}
+{"id":"c083","fragment":"the mark in the portal is a typo","target":"grade_dispute","category":"semantic_substitution","domain":"education"}
+{"id":"c084","fragment":"the homework mailbox ate my file","target":"assignment_submission_problem","category":"semantic_substitution","domain":"education"}
+{"id":"c085","fragment":"the register calls me absent when I was there","target":"attendance_correction","category":"semantic_substitution","domain":"education"}
+{"id":"c086","fragment":"my school record has a roadblock","target":"account_hold","category":"semantic_substitution","domain":"education"}
+{"id":"c087","fragment":"the grant answer is still asleep","target":"financial_aid_status","category":"semantic_substitution","domain":"education"}
+{"id":"c088","fragment":"where is my course diploma","target":"certificate_request","category":"semantic_substitution","domain":"education"}
+{"id":"c089","fragment":"the front door to my profile is jammed","target":"account_locked","category":"semantic_substitution","domain":"account"}
+{"id":"c090","fragment":"a visitor entered my account last night","target":"suspicious_login","category":"semantic_substitution","domain":"account"}
+{"id":"c091","fragment":"my profile label has my old surname","target":"profile_name_change","category":"semantic_substitution","domain":"account"}
+{"id":"c092","fragment":"the birthday gate thinks I am younger","target":"age_verification","category":"semantic_substitution","domain":"account"}
+{"id":"c093","fragment":"the login ticket number keeps expiring","target":"two_factor_problem","category":"semantic_substitution","domain":"account"}
+{"id":"c094","fragment":"my account mailbox died","target":"email_change","category":"semantic_substitution","domain":"account"}
+{"id":"c095","fragment":"the account alarm keeps flashing","target":"security_alert","category":"semantic_substitution","domain":"account"}
+{"id":"c096","fragment":"sign in is a merry-go-round","target":"login_loop","category":"semantic_substitution","domain":"account"}
+{"id":"c097","fragment":"order Tuesday promised still nowhere","target":"late_delivery","category":"telegraphic","domain":"retail"}
+{"id":"c098","fragment":"carrier says delivered porch empty","target":"missing_package","category":"telegraphic","domain":"retail"}
+{"id":"c099","fragment":"new blender power light nothing","target":"defective_product","category":"telegraphic","domain":"retail"}
+{"id":"c100","fragment":"ordered mistake stop before shipping","target":"cancel_order","category":"telegraphic","domain":"retail"}
+{"id":"c101","fragment":"shirt small need next size","target":"exchange_request","category":"telegraphic","domain":"retail"}
+{"id":"c102","fragment":"bought yesterday sale today difference","target":"price_adjustment","category":"telegraphic","domain":"retail"}
+{"id":"c103","fragment":"store collection paid counter unavailable","target":"pickup_problem","category":"telegraphic","domain":"retail"}
+{"id":"c104","fragment":"parcel scan same location five days","target":"tracking_not_updating","category":"telegraphic","domain":"retail"}
+{"id":"c105","fragment":"card okay checkout rejected again","target":"payment_declined","category":"telegraphic","domain":"billing"}
+{"id":"c106","fragment":"agreed forty statement sixty","target":"incorrect_amount","category":"telegraphic","domain":"billing"}
+{"id":"c107","fragment":"reversal approved two weeks card nothing","target":"refund_not_received","category":"telegraphic","domain":"billing"}
+{"id":"c108","fragment":"monthly plan stop future payments","target":"subscription_cancellation","category":"telegraphic","domain":"billing"}
+{"id":"c109","fragment":"ended membership new annual debit","target":"unexpected_renewal","category":"telegraphic","domain":"billing"}
+{"id":"c110","fragment":"three payments promised full amount taken","target":"installment_problem","category":"telegraphic","domain":"billing"}
+{"id":"c111","fragment":"earnings sent Friday bank empty","target":"payout_missing","category":"telegraphic","domain":"billing"}
+{"id":"c112","fragment":"account positive balance send back","target":"credit_balance","category":"telegraphic","domain":"billing"}
+{"id":"c113","fragment":"biology section open cannot join","target":"course_registration","category":"telegraphic","domain":"education"}
+{"id":"c114","fragment":"drop chemistry deadline today","target":"course_withdrawal","category":"telegraphic","domain":"education"}
+{"id":"c115","fragment":"semester fee paid portal unpaid","target":"tuition_payment_problem","category":"telegraphic","domain":"education"}
+{"id":"c116","fragment":"exam eighty portal fifty","target":"grade_dispute","category":"telegraphic","domain":"education"}
+{"id":"c117","fragment":"essay uploaded course page missing","target":"assignment_submission_problem","category":"telegraphic","domain":"education"}
+{"id":"c118","fragment":"test Monday hospital need later","target":"exam_reschedule","category":"telegraphic","domain":"education"}
+{"id":"c119","fragment":"present Tuesday marked absent","target":"attendance_correction","category":"telegraphic","domain":"education"}
+{"id":"c120","fragment":"student portal forgotten secret words","target":"password_reset","category":"telegraphic","domain":"education"}
+{"id":"c121","fragment":"new login secret needed","target":"password_reset","category":"telegraphic","domain":"account"}
+{"id":"c122","fragment":"too many tries access blocked","target":"account_locked","category":"telegraphic","domain":"account"}
+{"id":"c123","fragment":"passport clear person check failed","target":"identity_verification","category":"telegraphic","domain":"account"}
+{"id":"c124","fragment":"old mobile gone codes wrong number","target":"phone_number_change","category":"telegraphic","domain":"account"}
+{"id":"c125","fragment":"forgot sign-in name remember password","target":"username_recovery","category":"telegraphic","domain":"account"}
+{"id":"c126","fragment":"all stored personal records copy","target":"privacy_request","category":"telegraphic","domain":"account"}
+{"id":"c127","fragment":"outside profile connection broken","target":"linked_account_problem","category":"telegraphic","domain":"account"}
+{"id":"c128","fragment":"credentials accepted back sign-in again","target":"login_loop","category":"telegraphic","domain":"account"}

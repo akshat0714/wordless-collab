@@ -1,0 +1,758 @@
+{
+  "candidate_text_mode": "description",
+  "dataset": {
+    "authorship": "hand-authored",
+    "evaluation": "closed-set, single-gold, oracle-domain-conditioned retrieval",
+    "fingerprint_sha256": "699eb0ac64a31f19dca554fd6ba938725263d0b5bde4ba1ecc8d12ff371b5720",
+    "n_categories": 4,
+    "n_domains": 4,
+    "n_pairs": 128
+  },
+  "gate": {
+    "absolute_delta": 0.375,
+    "best_semantic_method": "embedding_small",
+    "bm25_top_3_accuracy": 0.476562,
+    "decision": "PASS",
+    "semantic_top_3_accuracy": 0.851562,
+    "thresholds": {
+      "absolute_delta_min": 0.25,
+      "semantic_top_3_min": 0.75
+    }
+  },
+  "methods": [
+    {
+      "candidate_text_mode": "description",
+      "kind": "lexical",
+      "metadata": {
+        "display_name": "Token overlap",
+        "kind": "lexical",
+        "method_id": "token_overlap",
+        "scoring": "count of unique case-folded Unicode tokens shared with candidate text",
+        "tie_breaker": "target id ascending"
+      },
+      "method_id": "token_overlap",
+      "overall": {
+        "denominator": 128,
+        "hit_rate_at_3": 0.46875,
+        "hits_at_1": 36,
+        "hits_at_3": 60,
+        "mean_reciprocal_rank": 0.427052,
+        "method": "single-gold closed-set rank; hit when the gold target is within k",
+        "n": 128,
+        "precision_at_1": 0.28125,
+        "precision_at_3_spec_alias": 0.46875,
+        "top_1_accuracy": 0.28125,
+        "top_3_accuracy": 0.46875
+      },
+      "per_category": {
+        "action_circumlocution": {
+          "denominator": 32,
+          "hit_rate_at_3": 0.5,
+          "hits_at_1": 9,
+          "hits_at_3": 16,
+          "mean_reciprocal_rank": 0.433427,
+          "method": "single-gold closed-set rank; hit when the gold target is within k",
+          "n": 32,
+          "precision_at_1": 0.28125,
+          "precision_at_3_spec_alias": 0.5,
+          "top_1_accuracy": 0.28125,
+          "top_3_accuracy": 0.5
+        },
+        "object_circumlocution": {
+          "denominator": 32,
+          "hit_rate_at_3": 0.375,
+          "hits_at_1": 7,
+          "hits_at_3": 12,
+          "mean_reciprocal_rank": 0.376107,
+          "method": "single-gold closed-set rank; hit when the gold target is within k",
+          "n": 32,
+          "precision_at_1": 0.21875,
+          "precision_at_3_spec_alias": 0.375,
+          "top_1_accuracy": 0.21875,
+          "top_3_accuracy": 0.375
+        },
+        "semantic_substitution": {
+          "denominator": 32,
+          "hit_rate_at_3": 0.375,
+          "hits_at_1": 6,
+          "hits_at_3": 12,
+          "mean_reciprocal_rank": 0.330608,
+          "method": "single-gold closed-set rank; hit when the gold target is within k",
+          "n": 32,
+          "precision_at_1": 0.1875,
+          "precision_at_3_spec_alias": 0.375,
+          "top_1_accuracy": 0.1875,
+          "top_3_accuracy": 0.375
+        },
+        "telegraphic": {
+          "denominator": 32,
+          "hit_rate_at_3": 0.625,
+          "hits_at_1": 14,
+          "hits_at_3": 20,
+          "mean_reciprocal_rank": 0.568066,
+          "method": "single-gold closed-set rank; hit when the gold target is within k",
+          "n": 32,
+          "precision_at_1": 0.4375,
+          "precision_at_3_spec_alias": 0.625,
+          "top_1_accuracy": 0.4375,
+          "top_3_accuracy": 0.625
+        }
+      },
+      "per_domain": {
+        "account": {
+          "denominator": 32,
+          "hit_rate_at_3": 0.46875,
+          "hits_at_1": 9,
+          "hits_at_3": 15,
+          "mean_reciprocal_rank": 0.421398,
+          "method": "single-gold closed-set rank; hit when the gold target is within k",
+          "n": 32,
+          "precision_at_1": 0.28125,
+          "precision_at_3_spec_alias": 0.46875,
+          "top_1_accuracy": 0.28125,
+          "top_3_accuracy": 0.46875
+        },
+        "billing": {
+          "denominator": 32,
+          "hit_rate_at_3": 0.5,
+          "hits_at_1": 9,
+          "hits_at_3": 16,
+          "mean_reciprocal_rank": 0.44523,
+          "method": "single-gold closed-set rank; hit when the gold target is within k",
+          "n": 32,
+          "precision_at_1": 0.28125,
+          "precision_at_3_spec_alias": 0.5,
+          "top_1_accuracy": 0.28125,
+          "top_3_accuracy": 0.5
+        },
+        "education": {
+          "denominator": 32,
+          "hit_rate_at_3": 0.4375,
+          "hits_at_1": 9,
+          "hits_at_3": 14,
+          "mean_reciprocal_rank": 0.423576,
+          "method": "single-gold closed-set rank; hit when the gold target is within k",
+          "n": 32,
+          "precision_at_1": 0.28125,
+          "precision_at_3_spec_alias": 0.4375,
+          "top_1_accuracy": 0.28125,
+          "top_3_accuracy": 0.4375
+        },
+        "retail": {
+          "denominator": 32,
+          "hit_rate_at_3": 0.46875,
+          "hits_at_1": 9,
+          "hits_at_3": 15,
+          "mean_reciprocal_rank": 0.418004,
+          "method": "single-gold closed-set rank; hit when the gold target is within k",
+          "n": 32,
+          "precision_at_1": 0.28125,
+          "precision_at_3_spec_alias": 0.46875,
+          "top_1_accuracy": 0.28125,
+          "top_3_accuracy": 0.46875
+        }
+      },
+      "status": "completed",
+      "target_macro": {
+        "method": "unweighted mean of top-3 accuracy for each (domain, target)",
+        "n_domain_targets": 80,
+        "top_3_accuracy": 0.4875
+      }
+    },
+    {
+      "candidate_text_mode": "description",
+      "kind": "lexical",
+      "metadata": {
+        "dependency": "rank_bm25",
+        "display_name": "BM25",
+        "kind": "lexical",
+        "method_id": "bm25",
+        "scoring": "rank_bm25.BM25Okapi over shared tokenization",
+        "tie_breaker": "target id ascending"
+      },
+      "method_id": "bm25",
+      "overall": {
+        "denominator": 128,
+        "hit_rate_at_3": 0.476562,
+        "hits_at_1": 44,
+        "hits_at_3": 61,
+        "mean_reciprocal_rank": 0.467735,
+        "method": "single-gold closed-set rank; hit when the gold target is within k",
+        "n": 128,
+        "precision_at_1": 0.34375,
+        "precision_at_3_spec_alias": 0.476562,
+        "top_1_accuracy": 0.34375,
+        "top_3_accuracy": 0.476562
+      },
+      "per_category": {
+        "action_circumlocution": {
+          "denominator": 32,
+          "hit_rate_at_3": 0.4375,
+          "hits_at_1": 10,
+          "hits_at_3": 14,
+          "mean_reciprocal_rank": 0.445407,
+          "method": "single-gold closed-set rank; hit when the gold target is within k",
+          "n": 32,
+          "precision_at_1": 0.3125,
+          "precision_at_3_spec_alias": 0.4375,
+          "top_1_accuracy": 0.3125,
+          "top_3_accuracy": 0.4375
+        },
+        "object_circumlocution": {
+          "denominator": 32,
+          "hit_rate_at_3": 0.46875,
+          "hits_at_1": 10,
+          "hits_at_3": 15,
+          "mean_reciprocal_rank": 0.450028,
+          "method": "single-gold closed-set rank; hit when the gold target is within k",
+          "n": 32,
+          "precision_at_1": 0.3125,
+          "precision_at_3_spec_alias": 0.46875,
+          "top_1_accuracy": 0.3125,
+          "top_3_accuracy": 0.46875
+        },
+        "semantic_substitution": {
+          "denominator": 32,
+          "hit_rate_at_3": 0.40625,
+          "hits_at_1": 7,
+          "hits_at_3": 13,
+          "mean_reciprocal_rank": 0.363168,
+          "method": "single-gold closed-set rank; hit when the gold target is within k",
+          "n": 32,
+          "precision_at_1": 0.21875,
+          "precision_at_3_spec_alias": 0.40625,
+          "top_1_accuracy": 0.21875,
+          "top_3_accuracy": 0.40625
+        },
+        "telegraphic": {
+          "denominator": 32,
+          "hit_rate_at_3": 0.59375,
+          "hits_at_1": 17,
+          "hits_at_3": 19,
+          "mean_reciprocal_rank": 0.612336,
+          "method": "single-gold closed-set rank; hit when the gold target is within k",
+          "n": 32,
+          "precision_at_1": 0.53125,
+          "precision_at_3_spec_alias": 0.59375,
+          "top_1_accuracy": 0.53125,
+          "top_3_accuracy": 0.59375
+        }
+      },
+      "per_domain": {
+        "account": {
+          "denominator": 32,
+          "hit_rate_at_3": 0.40625,
+          "hits_at_1": 11,
+          "hits_at_3": 13,
+          "mean_reciprocal_rank": 0.449925,
+          "method": "single-gold closed-set rank; hit when the gold target is within k",
+          "n": 32,
+          "precision_at_1": 0.34375,
+          "precision_at_3_spec_alias": 0.40625,
+          "top_1_accuracy": 0.34375,
+          "top_3_accuracy": 0.40625
+        },
+        "billing": {
+          "denominator": 32,
+          "hit_rate_at_3": 0.5625,
+          "hits_at_1": 14,
+          "hits_at_3": 18,
+          "mean_reciprocal_rank": 0.548592,
+          "method": "single-gold closed-set rank; hit when the gold target is within k",
+          "n": 32,
+          "precision_at_1": 0.4375,
+          "precision_at_3_spec_alias": 0.5625,
+          "top_1_accuracy": 0.4375,
+          "top_3_accuracy": 0.5625
+        },
+        "education": {
+          "denominator": 32,
+          "hit_rate_at_3": 0.46875,
+          "hits_at_1": 10,
+          "hits_at_3": 15,
+          "mean_reciprocal_rank": 0.450117,
+          "method": "single-gold closed-set rank; hit when the gold target is within k",
+          "n": 32,
+          "precision_at_1": 0.3125,
+          "precision_at_3_spec_alias": 0.46875,
+          "top_1_accuracy": 0.3125,
+          "top_3_accuracy": 0.46875
+        },
+        "retail": {
+          "denominator": 32,
+          "hit_rate_at_3": 0.46875,
+          "hits_at_1": 9,
+          "hits_at_3": 15,
+          "mean_reciprocal_rank": 0.422306,
+          "method": "single-gold closed-set rank; hit when the gold target is within k",
+          "n": 32,
+          "precision_at_1": 0.28125,
+          "precision_at_3_spec_alias": 0.46875,
+          "top_1_accuracy": 0.28125,
+          "top_3_accuracy": 0.46875
+        }
+      },
+      "status": "completed",
+      "target_macro": {
+        "method": "unweighted mean of top-3 accuracy for each (domain, target)",
+        "n_domain_targets": 80,
+        "top_3_accuracy": 0.4625
+      }
+    },
+    {
+      "candidate_text_mode": "description",
+      "kind": "semantic",
+      "metadata": {
+        "batch_size": 32,
+        "device": "cpu",
+        "display_name": "Embedding (small)",
+        "kind": "semantic",
+        "local_files_only": true,
+        "method_id": "embedding_small",
+        "model": {
+          "document_prefix": "",
+          "model_id": "sentence-transformers/all-MiniLM-L6-v2",
+          "query_prefix": "",
+          "revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+          "role": "small",
+          "trust_remote_code": false
+        },
+        "scoring": "cosine similarity of L2-normalized SentenceTransformer embeddings",
+        "seed": 17,
+        "tie_breaker": "target id ascending"
+      },
+      "method_id": "embedding_small",
+      "overall": {
+        "denominator": 128,
+        "hit_rate_at_3": 0.851562,
+        "hits_at_1": 81,
+        "hits_at_3": 109,
+        "mean_reciprocal_rank": 0.757789,
+        "method": "single-gold closed-set rank; hit when the gold target is within k",
+        "n": 128,
+        "precision_at_1": 0.632812,
+        "precision_at_3_spec_alias": 0.851562,
+        "top_1_accuracy": 0.632812,
+        "top_3_accuracy": 0.851562
+      },
+      "per_category": {
+        "action_circumlocution": {
+          "denominator": 32,
+          "hit_rate_at_3": 0.8125,
+          "hits_at_1": 20,
+          "hits_at_3": 26,
+          "mean_reciprocal_rank": 0.741443,
+          "method": "single-gold closed-set rank; hit when the gold target is within k",
+          "n": 32,
+          "precision_at_1": 0.625,
+          "precision_at_3_spec_alias": 0.8125,
+          "top_1_accuracy": 0.625,
+          "top_3_accuracy": 0.8125
+        },
+        "object_circumlocution": {
+          "denominator": 32,
+          "hit_rate_at_3": 0.90625,
+          "hits_at_1": 18,
+          "hits_at_3": 29,
+          "mean_reciprocal_rank": 0.742057,
+          "method": "single-gold closed-set rank; hit when the gold target is within k",
+          "n": 32,
+          "precision_at_1": 0.5625,
+          "precision_at_3_spec_alias": 0.90625,
+          "top_1_accuracy": 0.5625,
+          "top_3_accuracy": 0.90625
+        },
+        "semantic_substitution": {
+          "denominator": 32,
+          "hit_rate_at_3": 0.78125,
+          "hits_at_1": 18,
+          "hits_at_3": 25,
+          "mean_reciprocal_rank": 0.703385,
+          "method": "single-gold closed-set rank; hit when the gold target is within k",
+          "n": 32,
+          "precision_at_1": 0.5625,
+          "precision_at_3_spec_alias": 0.78125,
+          "top_1_accuracy": 0.5625,
+          "top_3_accuracy": 0.78125
+        },
+        "telegraphic": {
+          "denominator": 32,
+          "hit_rate_at_3": 0.90625,
+          "hits_at_1": 25,
+          "hits_at_3": 29,
+          "mean_reciprocal_rank": 0.844271,
+          "method": "single-gold closed-set rank; hit when the gold target is within k",
+          "n": 32,
+          "precision_at_1": 0.78125,
+          "precision_at_3_spec_alias": 0.90625,
+          "top_1_accuracy": 0.78125,
+          "top_3_accuracy": 0.90625
+        }
+      },
+      "per_domain": {
+        "account": {
+          "denominator": 32,
+          "hit_rate_at_3": 0.90625,
+          "hits_at_1": 22,
+          "hits_at_3": 29,
+          "mean_reciprocal_rank": 0.803646,
+          "method": "single-gold closed-set rank; hit when the gold target is within k",
+          "n": 32,
+          "precision_at_1": 0.6875,
+          "precision_at_3_spec_alias": 0.90625,
+          "top_1_accuracy": 0.6875,
+          "top_3_accuracy": 0.90625
+        },
+        "billing": {
+          "denominator": 32,
+          "hit_rate_at_3": 0.84375,
+          "hits_at_1": 21,
+          "hits_at_3": 27,
+          "mean_reciprocal_rank": 0.760063,
+          "method": "single-gold closed-set rank; hit when the gold target is within k",
+          "n": 32,
+          "precision_at_1": 0.65625,
+          "precision_at_3_spec_alias": 0.84375,
+          "top_1_accuracy": 0.65625,
+          "top_3_accuracy": 0.84375
+        },
+        "education": {
+          "denominator": 32,
+          "hit_rate_at_3": 0.78125,
+          "hits_at_1": 19,
+          "hits_at_3": 25,
+          "mean_reciprocal_rank": 0.71875,
+          "method": "single-gold closed-set rank; hit when the gold target is within k",
+          "n": 32,
+          "precision_at_1": 0.59375,
+          "precision_at_3_spec_alias": 0.78125,
+          "top_1_accuracy": 0.59375,
+          "top_3_accuracy": 0.78125
+        },
+        "retail": {
+          "denominator": 32,
+          "hit_rate_at_3": 0.875,
+          "hits_at_1": 19,
+          "hits_at_3": 28,
+          "mean_reciprocal_rank": 0.748698,
+          "method": "single-gold closed-set rank; hit when the gold target is within k",
+          "n": 32,
+          "precision_at_1": 0.59375,
+          "precision_at_3_spec_alias": 0.875,
+          "top_1_accuracy": 0.59375,
+          "top_3_accuracy": 0.875
+        }
+      },
+      "status": "completed",
+      "target_macro": {
+        "method": "unweighted mean of top-3 accuracy for each (domain, target)",
+        "n_domain_targets": 80,
+        "top_3_accuracy": 0.83125
+      }
+    },
+    {
+      "candidate_text_mode": "description",
+      "kind": "semantic",
+      "metadata": {
+        "batch_size": 32,
+        "device": "cpu",
+        "display_name": "Embedding (strong_general)",
+        "kind": "semantic",
+        "local_files_only": true,
+        "method_id": "embedding_strong_general",
+        "model": {
+          "document_prefix": "",
+          "model_id": "sentence-transformers/all-mpnet-base-v2",
+          "query_prefix": "",
+          "revision": "e8c3b32edf5434bc2275fc9bab85f82640a19130",
+          "role": "strong_general",
+          "trust_remote_code": false
+        },
+        "scoring": "cosine similarity of L2-normalized SentenceTransformer embeddings",
+        "seed": 17,
+        "tie_breaker": "target id ascending"
+      },
+      "method_id": "embedding_strong_general",
+      "overall": {
+        "denominator": 128,
+        "hit_rate_at_3": 0.851562,
+        "hits_at_1": 79,
+        "hits_at_3": 109,
+        "mean_reciprocal_rank": 0.749042,
+        "method": "single-gold closed-set rank; hit when the gold target is within k",
+        "n": 128,
+        "precision_at_1": 0.617188,
+        "precision_at_3_spec_alias": 0.851562,
+        "top_1_accuracy": 0.617188,
+        "top_3_accuracy": 0.851562
+      },
+      "per_category": {
+        "action_circumlocution": {
+          "denominator": 32,
+          "hit_rate_at_3": 0.78125,
+          "hits_at_1": 18,
+          "hits_at_3": 25,
+          "mean_reciprocal_rank": 0.697396,
+          "method": "single-gold closed-set rank; hit when the gold target is within k",
+          "n": 32,
+          "precision_at_1": 0.5625,
+          "precision_at_3_spec_alias": 0.78125,
+          "top_1_accuracy": 0.5625,
+          "top_3_accuracy": 0.78125
+        },
+        "object_circumlocution": {
+          "denominator": 32,
+          "hit_rate_at_3": 0.84375,
+          "hits_at_1": 17,
+          "hits_at_3": 27,
+          "mean_reciprocal_rank": 0.710193,
+          "method": "single-gold closed-set rank; hit when the gold target is within k",
+          "n": 32,
+          "precision_at_1": 0.53125,
+          "precision_at_3_spec_alias": 0.84375,
+          "top_1_accuracy": 0.53125,
+          "top_3_accuracy": 0.84375
+        },
+        "semantic_substitution": {
+          "denominator": 32,
+          "hit_rate_at_3": 0.90625,
+          "hits_at_1": 21,
+          "hits_at_3": 29,
+          "mean_reciprocal_rank": 0.769829,
+          "method": "single-gold closed-set rank; hit when the gold target is within k",
+          "n": 32,
+          "precision_at_1": 0.65625,
+          "precision_at_3_spec_alias": 0.90625,
+          "top_1_accuracy": 0.65625,
+          "top_3_accuracy": 0.90625
+        },
+        "telegraphic": {
+          "denominator": 32,
+          "hit_rate_at_3": 0.875,
+          "hits_at_1": 23,
+          "hits_at_3": 28,
+          "mean_reciprocal_rank": 0.81875,
+          "method": "single-gold closed-set rank; hit when the gold target is within k",
+          "n": 32,
+          "precision_at_1": 0.71875,
+          "precision_at_3_spec_alias": 0.875,
+          "top_1_accuracy": 0.71875,
+          "top_3_accuracy": 0.875
+        }
+      },
+      "per_domain": {
+        "account": {
+          "denominator": 32,
+          "hit_rate_at_3": 0.84375,
+          "hits_at_1": 20,
+          "hits_at_3": 27,
+          "mean_reciprocal_rank": 0.745089,
+          "method": "single-gold closed-set rank; hit when the gold target is within k",
+          "n": 32,
+          "precision_at_1": 0.625,
+          "precision_at_3_spec_alias": 0.84375,
+          "top_1_accuracy": 0.625,
+          "top_3_accuracy": 0.84375
+        },
+        "billing": {
+          "denominator": 32,
+          "hit_rate_at_3": 0.84375,
+          "hits_at_1": 22,
+          "hits_at_3": 27,
+          "mean_reciprocal_rank": 0.791406,
+          "method": "single-gold closed-set rank; hit when the gold target is within k",
+          "n": 32,
+          "precision_at_1": 0.6875,
+          "precision_at_3_spec_alias": 0.84375,
+          "top_1_accuracy": 0.6875,
+          "top_3_accuracy": 0.84375
+        },
+        "education": {
+          "denominator": 32,
+          "hit_rate_at_3": 0.875,
+          "hits_at_1": 18,
+          "hits_at_3": 28,
+          "mean_reciprocal_rank": 0.722135,
+          "method": "single-gold closed-set rank; hit when the gold target is within k",
+          "n": 32,
+          "precision_at_1": 0.5625,
+          "precision_at_3_spec_alias": 0.875,
+          "top_1_accuracy": 0.5625,
+          "top_3_accuracy": 0.875
+        },
+        "retail": {
+          "denominator": 32,
+          "hit_rate_at_3": 0.84375,
+          "hits_at_1": 19,
+          "hits_at_3": 27,
+          "mean_reciprocal_rank": 0.737537,
+          "method": "single-gold closed-set rank; hit when the gold target is within k",
+          "n": 32,
+          "precision_at_1": 0.59375,
+          "precision_at_3_spec_alias": 0.84375,
+          "top_1_accuracy": 0.59375,
+          "top_3_accuracy": 0.84375
+        }
+      },
+      "status": "completed",
+      "target_macro": {
+        "method": "unweighted mean of top-3 accuracy for each (domain, target)",
+        "n_domain_targets": 80,
+        "top_3_accuracy": 0.85
+      }
+    },
+    {
+      "candidate_text_mode": "description",
+      "kind": "semantic",
+      "metadata": {
+        "batch_size": 32,
+        "device": "cpu",
+        "display_name": "Embedding (instruction_tuned)",
+        "kind": "semantic",
+        "local_files_only": true,
+        "method_id": "embedding_instruction_tuned",
+        "model": {
+          "document_prefix": "passage: ",
+          "model_id": "intfloat/e5-base-v2",
+          "query_prefix": "query: ",
+          "revision": "f52bf8ec8c7124536f0efb74aca902b2995e5bcd",
+          "role": "instruction_tuned",
+          "trust_remote_code": false
+        },
+        "scoring": "cosine similarity of L2-normalized SentenceTransformer embeddings",
+        "seed": 17,
+        "tie_breaker": "target id ascending"
+      },
+      "method_id": "embedding_instruction_tuned",
+      "overall": {
+        "denominator": 128,
+        "hit_rate_at_3": 0.796875,
+        "hits_at_1": 85,
+        "hits_at_3": 102,
+        "mean_reciprocal_rank": 0.756346,
+        "method": "single-gold closed-set rank; hit when the gold target is within k",
+        "n": 128,
+        "precision_at_1": 0.664062,
+        "precision_at_3_spec_alias": 0.796875,
+        "top_1_accuracy": 0.664062,
+        "top_3_accuracy": 0.796875
+      },
+      "per_category": {
+        "action_circumlocution": {
+          "denominator": 32,
+          "hit_rate_at_3": 0.75,
+          "hits_at_1": 20,
+          "hits_at_3": 24,
+          "mean_reciprocal_rank": 0.719811,
+          "method": "single-gold closed-set rank; hit when the gold target is within k",
+          "n": 32,
+          "precision_at_1": 0.625,
+          "precision_at_3_spec_alias": 0.75,
+          "top_1_accuracy": 0.625,
+          "top_3_accuracy": 0.75
+        },
+        "object_circumlocution": {
+          "denominator": 32,
+          "hit_rate_at_3": 0.78125,
+          "hits_at_1": 20,
+          "hits_at_3": 25,
+          "mean_reciprocal_rank": 0.741443,
+          "method": "single-gold closed-set rank; hit when the gold target is within k",
+          "n": 32,
+          "precision_at_1": 0.625,
+          "precision_at_3_spec_alias": 0.78125,
+          "top_1_accuracy": 0.625,
+          "top_3_accuracy": 0.78125
+        },
+        "semantic_substitution": {
+          "denominator": 32,
+          "hit_rate_at_3": 0.84375,
+          "hits_at_1": 21,
+          "hits_at_3": 27,
+          "mean_reciprocal_rank": 0.75811,
+          "method": "single-gold closed-set rank; hit when the gold target is within k",
+          "n": 32,
+          "precision_at_1": 0.65625,
+          "precision_at_3_spec_alias": 0.84375,
+          "top_1_accuracy": 0.65625,
+          "top_3_accuracy": 0.84375
+        },
+        "telegraphic": {
+          "denominator": 32,
+          "hit_rate_at_3": 0.8125,
+          "hits_at_1": 24,
+          "hits_at_3": 26,
+          "mean_reciprocal_rank": 0.806021,
+          "method": "single-gold closed-set rank; hit when the gold target is within k",
+          "n": 32,
+          "precision_at_1": 0.75,
+          "precision_at_3_spec_alias": 0.8125,
+          "top_1_accuracy": 0.75,
+          "top_3_accuracy": 0.8125
+        }
+      },
+      "per_domain": {
+        "account": {
+          "denominator": 32,
+          "hit_rate_at_3": 0.71875,
+          "hits_at_1": 16,
+          "hits_at_3": 23,
+          "mean_reciprocal_rank": 0.653994,
+          "method": "single-gold closed-set rank; hit when the gold target is within k",
+          "n": 32,
+          "precision_at_1": 0.5,
+          "precision_at_3_spec_alias": 0.71875,
+          "top_1_accuracy": 0.5,
+          "top_3_accuracy": 0.71875
+        },
+        "billing": {
+          "denominator": 32,
+          "hit_rate_at_3": 0.8125,
+          "hits_at_1": 23,
+          "hits_at_3": 26,
+          "mean_reciprocal_rank": 0.784152,
+          "method": "single-gold closed-set rank; hit when the gold target is within k",
+          "n": 32,
+          "precision_at_1": 0.71875,
+          "precision_at_3_spec_alias": 0.8125,
+          "top_1_accuracy": 0.71875,
+          "top_3_accuracy": 0.8125
+        },
+        "education": {
+          "denominator": 32,
+          "hit_rate_at_3": 0.8125,
+          "hits_at_1": 23,
+          "hits_at_3": 26,
+          "mean_reciprocal_rank": 0.789714,
+          "method": "single-gold closed-set rank; hit when the gold target is within k",
+          "n": 32,
+          "precision_at_1": 0.71875,
+          "precision_at_3_spec_alias": 0.8125,
+          "top_1_accuracy": 0.71875,
+          "top_3_accuracy": 0.8125
+        },
+        "retail": {
+          "denominator": 32,
+          "hit_rate_at_3": 0.84375,
+          "hits_at_1": 23,
+          "hits_at_3": 27,
+          "mean_reciprocal_rank": 0.797526,
+          "method": "single-gold closed-set rank; hit when the gold target is within k",
+          "n": 32,
+          "precision_at_1": 0.71875,
+          "precision_at_3_spec_alias": 0.84375,
+          "top_1_accuracy": 0.71875,
+          "top_3_accuracy": 0.84375
+        }
+      },
+      "status": "completed",
+      "target_macro": {
+        "method": "unweighted mean of top-3 accuracy for each (domain, target)",
+        "n_domain_targets": 80,
+        "top_3_accuracy": 0.8
+      }
+    }
+  ],
+  "schema_version": 1,
+  "seed": 17
+}

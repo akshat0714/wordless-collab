@@ -1,0 +1,80 @@
+[
+  {
+    "id": "duplicate-charge",
+    "customer_key": "hmac-sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "opened_at": "2026-07-20T12:00:00Z",
+    "channel": "chat",
+    "messages": [
+      {"author": "customer", "sent_at": "2026-07-20T12:00:00Z", "text": "money one twice", "redacted": true}
+    ],
+    "state_snapshot": [
+      {"source": "billing", "kind": "charge", "occurred_at": "2026-07-20T10:00:00Z", "fields": {"charge_id": "ch_1", "amount": "84.00", "currency": "USD", "status": "succeeded"}, "provenance": "exported"},
+      {"source": "billing", "kind": "charge", "occurred_at": "2026-07-20T10:30:00Z", "fields": {"charge_id": "ch_2", "amount": "84.00", "currency": "USD", "status": "succeeded"}, "provenance": "exported"}
+    ],
+    "resolution": {"resolved_at": "2026-07-20T12:20:00Z", "original_label": "duplicate_charge", "actions": ["Refunded the second charge"], "closing_text": "We refunded the duplicate card charge."},
+    "source_system": "fixture",
+    "metadata": {}
+  },
+  {
+    "id": "late-delivery",
+    "customer_key": "hmac-sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "opened_at": "2026-07-20T12:00:00Z",
+    "channel": "email",
+    "messages": [
+      {"author": "customer", "sent_at": "2026-07-20T12:00:00Z", "text": "still not come", "redacted": true}
+    ],
+    "state_snapshot": [
+      {"source": "orders", "kind": "shipment", "occurred_at": "2026-07-19T08:00:00Z", "fields": {"order_id": "ord_2", "status": "in_transit", "expected_delivery_at": "2026-07-18T23:59:00Z"}, "provenance": "exported"}
+    ],
+    "resolution": {"resolved_at": "2026-07-20T13:00:00Z", "original_label": "late_delivery", "actions": ["Opened a carrier trace"], "closing_text": "The delayed package is being traced."},
+    "source_system": "fixture",
+    "metadata": {}
+  },
+  {
+    "id": "wrong-item",
+    "customer_key": "hmac-sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "opened_at": "2026-07-20T12:00:00Z",
+    "channel": "form",
+    "messages": [
+      {"author": "customer", "sent_at": "2026-07-20T12:00:00Z", "text": "order wrong thing help", "redacted": true}
+    ],
+    "state_snapshot": [
+      {"source": "orders", "kind": "order", "occurred_at": "2026-07-20T09:00:00Z", "fields": {"order_id": "ord_3", "ordered_sku": "KETTLE-BLUE", "delivered_sku": "MUG-BLUE", "status": "delivered"}, "provenance": "reconstructed"}
+    ],
+    "resolution": {"resolved_at": "2026-07-20T12:30:00Z", "original_label": "wrong_item", "actions": ["Sent the correct item"], "closing_text": "We replaced the incorrect product."},
+    "source_system": "fixture",
+    "metadata": {}
+  },
+  {
+    "id": "account-lock",
+    "customer_key": "hmac-sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "opened_at": "2026-07-20T12:00:00Z",
+    "channel": "phone",
+    "messages": [
+      {"author": "customer", "sent_at": "2026-07-20T12:00:00Z", "text": "cannot get in", "redacted": true}
+    ],
+    "state_snapshot": [
+      {"source": "account", "kind": "authentication", "occurred_at": "2026-07-20T11:58:00Z", "fields": {"status": "locked", "locked": true, "failed_attempts": 3}, "provenance": "inferred"}
+    ],
+    "resolution": {"resolved_at": "2026-07-20T12:10:00Z", "original_label": "account_lock", "actions": ["Unlocked the account"], "closing_text": "Your locked account can be used again."},
+    "source_system": "fixture",
+    "metadata": {}
+  },
+  {
+    "id": "clean-account",
+    "customer_key": "hmac-sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "opened_at": "2026-07-20T12:00:00Z",
+    "channel": "web",
+    "messages": [
+      {"author": "customer", "sent_at": "2026-07-20T12:00:00Z", "text": "where receipt", "redacted": true}
+    ],
+    "state_snapshot": [
+      {"source": "billing", "kind": "charge", "occurred_at": "2026-07-19T10:00:00Z", "fields": {"charge_id": "ch_clean", "amount": "42.00", "currency": "USD", "status": "succeeded"}, "provenance": "exported"},
+      {"source": "orders", "kind": "order", "occurred_at": "2026-07-18T10:00:00Z", "fields": {"order_id": "ord_clean", "ordered_sku": "MUG-WHITE", "delivered_sku": "MUG-WHITE", "status": "delivered", "expected_delivery_at": "2026-07-19T10:00:00Z"}, "provenance": "exported"},
+      {"source": "account", "kind": "account", "occurred_at": "2026-07-20T11:00:00Z", "fields": {"status": "active", "locked": false, "failed_attempts": 0}, "provenance": "exported"}
+    ],
+    "resolution": {"resolved_at": "2026-07-20T12:05:00Z", "original_label": "receipt_request", "actions": ["Sent a receipt"], "closing_text": "Your receipt is attached."},
+    "source_system": "fixture",
+    "metadata": {}
+  }
+]

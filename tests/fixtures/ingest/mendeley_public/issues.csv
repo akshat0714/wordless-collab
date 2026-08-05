@@ -1,0 +1,3 @@
+id,issue_reporter,issue_created,issue_resolution_date,issue_resolution,issue_status,issue_num,issue_type,issue_priority,issue_comments_count,processing_steps
+42.0,masked-reporter,2026-01-02 10:00:00+00:00,2026-01-02 11:00:00+00:00,Done,closed,42.0,Ticket,High,3,2
+43.0,second-reporter,2026-01-03 10:00:00+00:00,2026-01-03 12:00:00+00:00,Cannot Reproduce,closed,43.0,Incident,Medium,1,1

@@ -1,0 +1,122 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    name: Python tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv python install
+      - run: uv sync --frozen --extra test
+      - run: uv run pytest
+
+  console:
+    name: Console tests and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: console/package-lock.json
+      - run: npm ci
+        working-directory: console
+      - run: npm run typecheck
+        working-directory: console
+      - run: npm test
+        working-directory: console
+      - run: npm run build
+        working-directory: console
+
+  sdk:
+    name: SDK accessibility tests and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: sdk/package-lock.json
+      - run: npm ci
+        working-directory: sdk
+      - run: npm run typecheck
+        working-directory: sdk
+      - run: npm test
+        working-directory: sdk
+      - run: npm run build
+        working-directory: sdk
+
+  zendesk-gateway:
+    name: Zendesk gateway tests and build
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://wordless_test:wordless_test@127.0.0.1:5432/wordless_gateway_test
+      TEST_DATABASE_URL: postgresql://wordless_test:wordless_test@127.0.0.1:5432/wordless_gateway_test
+    services:
+      postgres:
+        image: postgres:17.10-alpine3.23
+        env:
+          POSTGRES_DB: wordless_gateway_test
+          POSTGRES_USER: wordless_test
+          POSTGRES_PASSWORD: wordless_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready --username wordless_test --dbname wordless_gateway_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            sdk/package-lock.json
+            services/zendesk-gateway/package-lock.json
+      - run: npm ci
+        working-directory: sdk
+      - run: npm run build
+        working-directory: sdk
+      - run: npm ci
+        working-directory: services/zendesk-gateway
+      - run: npm run typecheck
+        working-directory: services/zendesk-gateway
+      - run: npm run build
+        working-directory: services/zendesk-gateway
+      - run: npm run migrate
+        working-directory: services/zendesk-gateway
+      - run: npm test
+        working-directory: services/zendesk-gateway
+
+  public-site:
+    name: Public site checks and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: public-site/package-lock.json
+      - run: npm ci
+        working-directory: public-site
+      - run: npm run check
+        working-directory: public-site
+      - run: npm test
+        working-directory: public-site
+      - run: npm run build
+        working-directory: public-site

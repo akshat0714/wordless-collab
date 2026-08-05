@@ -1,0 +1,24 @@
+[
+  {
+    "id": "acme",
+    "appId": "YOUR_ZENDESK_APP_ID",
+    "webhookId": "YOUR_ZENDESK_WEBHOOK_ID",
+    "switchboardIntegrationId": "YOUR_WORDLESS_SWITCHBOARD_ENTRY_ID",
+    "underlyingIntegrationId": "YOUR_WORDLESS_UNDERLYING_INTEGRATION_ID",
+    "humanSwitchboardIntegrationId": "YOUR_AGENT_WORKSPACE_SWITCHBOARD_ENTRY_ID",
+    "zendeskSubdomain": "acme",
+    "webhookAuth": {
+      "mode": "x_api_key",
+      "secretRef": "ZENDESK_WEBHOOK_SECRET"
+    },
+    "choiceSigningSecretRef": "CHOICE_SIGNING_SECRET",
+    "wordlessApiKeyRef": "WORDLESS_API_KEY",
+    "wordlessSigningSecretRef": "WORDLESS_SIGNING_SECRET",
+    "zendeskAuthentication": {
+      "type": "basic",
+      "scope": "integration",
+      "keyIdRef": "ZENDESK_KEY_ID",
+      "keySecretRef": "ZENDESK_KEY_SECRET"
+    }
+  }
+]

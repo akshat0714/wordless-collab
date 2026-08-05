@@ -1,0 +1,64 @@
+{
+  "name": "@wordless/sdk",
+  "version": "0.3.0",
+  "description": "Private Wordless support-chat integration client and accessible confirmation cards",
+  "private": true,
+  "license": "UNLICENSED",
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "restricted"
+  },
+  "files": ["dist", "examples", "integrations", "README.md", "VPAT.md"],
+  "main": "./dist/esm/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/types/index.d.ts",
+  "unpkg": "./dist/wordless-confirm-cards.js",
+  "jsdelivr": "./dist/wordless-confirm-cards.js",
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "default": "./dist/esm/index.js"
+    },
+    "./server": {
+      "types": "./dist/types/server.d.ts",
+      "node": {
+        "import": "./dist/esm/server.js",
+        "default": "./dist/esm/server.js"
+      }
+    },
+    "./zendesk": {
+      "types": "./dist/types/zendesk.d.ts",
+      "node": {
+        "import": "./dist/esm/zendesk.js",
+        "default": "./dist/esm/zendesk.js"
+      }
+    },
+    "./zendesk-marketplace": {
+      "types": "./dist/types/zendesk-marketplace.d.ts",
+      "node": {
+        "import": "./dist/esm/zendesk-marketplace.js",
+        "default": "./dist/esm/zendesk-marketplace.js"
+      }
+    }
+  },
+  "scripts": {
+    "build": "npm run clean && tsc -p tsconfig.build.json && esbuild src/index.ts --bundle --format=iife --global-name=WordlessConfirmCards --target=es2020 --outfile=dist/wordless-confirm-cards.js",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
+    "test": "vitest run --coverage=false",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/jsdom": "^21.1.7",
+    "@types/node": "^26.1.1",
+    "axe-core": "^4.10.2",
+    "esbuild": "^0.25.0",
+    "jsdom": "^26.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}

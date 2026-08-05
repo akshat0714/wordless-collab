@@ -1,0 +1,29 @@
+format: csv
+source_system: mapped_helpdesk
+fields:
+  id: ticket_id
+  customer_id: requester_email
+  opened_at: created_at
+  channel: channel
+  metadata: metadata
+messages:
+  fields:
+    author: role
+    sent_at: created_at
+    text: body
+state:
+  path: charges
+  fields:
+    source: {value: billing}
+    kind: {value: charge}
+    occurred_at: charged_at
+    fields:
+      amount: amount
+      status: status
+      order_id: order_id
+resolution:
+  fields:
+    resolved_at: closed_at
+    original_label: category
+    actions: actions
+    closing_text: closing_text
