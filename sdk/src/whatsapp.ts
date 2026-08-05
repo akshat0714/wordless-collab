@@ -197,7 +197,7 @@ export interface WhatsAppPendingChoiceSet {
   readonly choices: readonly WhatsAppPendingChoice[];
 }
 
-function buttonTitle(turn: WordlessSupportChatTurn, choice: WordlessSupportChoice): string {
+function buttonTitle(choice: WordlessSupportChoice): string {
   const label = choice.detectorId === null ? WHATSAPP_SHOW_CHOICES_LABEL : choice.label;
   if (label.length > MAX_BUTTON_TITLE) {
     throw new WhatsAppIntegrationError(
@@ -243,7 +243,7 @@ export function buildWhatsAppSendRequest(
     if (payload.length > MAX_BUTTON_ID) {
       throw new WhatsAppIntegrationError("WhatsApp reply-button id exceeds 256 characters.");
     }
-    const title = buttonTitle(turn, choice);
+    const title = buttonTitle(choice);
     pending.push(Object.freeze({
       payload, id: choice.id, label: title, reply: choice.reply,
       detectorId: choice.detectorId, feedback, evidenceIndexes: choice.evidenceIndexes,

@@ -58,6 +58,11 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function str(value: unknown, max: number): string | null {
   return typeof value === "string" && value.length > 0 && value.length <= max ? value : null;
 }
+const SLACK_TS_PATTERN = /^\d+(?:\.\d+)?$/u;
+function slackTimestamp(value: unknown, max: number): string | null {
+  const parsed = str(value, max);
+  return parsed !== null && SLACK_TS_PATTERN.test(parsed) ? parsed : null;
+}
 
 const MAX_ACTIONS = 25;
 
@@ -77,7 +82,7 @@ export function parseSlackMessageEvent(parsedBody: unknown, selfBotUserId: strin
   const teamId = str(parsedBody.team_id, 64);
   const channelId = str(event.channel, 64);
   const userId = str(event.user, 64);
-  const messageTs = str(event.ts, 64);
+  const messageTs = slackTimestamp(event.ts, 64);
   const text = typeof event.text === "string" ? event.text.slice(0, 4_000) : "";
   if (teamId === null || channelId === null || userId === null || messageTs === null || userId === selfBotUserId) {
     return { ignored: "not_a_user_message" };
@@ -192,7 +197,7 @@ export interface SlackPostMessageResult extends SlackResultBase {
 }
 export interface SlackContinueResult extends SlackResultBase { readonly kind: "continue"; readonly reason: SlackContinueReason; }
 export interface SlackHandoffResult extends SlackResultBase { readonly kind: "handoff"; readonly reason: "human_requested"; }
-export interface SlackIgnoredResult { readonly kind: "ignored"; readonly reason: "not_a_user_message" | "not_a_button_action"; }
+export interface SlackIgnoredResult { readonly kind: "ignored"; readonly reason: "not_a_button_action"; }
 export type SlackResult = SlackPostMessageResult | SlackContinueResult | SlackHandoffResult | SlackIgnoredResult;
 export type SlackEventOutcome = { readonly kind: "url_verification"; readonly challenge: string } | { readonly kind: "result"; readonly result: SlackResult } | { readonly kind: "ignored" };
 

@@ -270,8 +270,13 @@ host's own bot/agent handles the message). Choice resolution and
   a `clarification_choices` turn and is the only zero-evidence choice.
 - Signed, expiring, nonce-bound, one-time choice payloads; replay and cross-
   conversation reuse are rejected by signature binding + store consumption.
-- Timeouts/fallbacks: any Wordless or resolver error degrades to a safe
-  `continue`, never a fabricated intent or a blocked customer.
+- Timeouts/fallbacks: a `WordlessSdkError` from `chatbot.processMessage` always
+  degrades to a safe `continue`. A `resolveAuthenticatedAccount` (resolver)
+  outage propagates by default (`accountResolutionFailureMode` defaults to
+  `"throw"` — fail-closed: the host webhook returns non-2xx and the platform
+  retries), and only degrades to a safe `continue` when the host opts in with
+  `accountResolutionFailureMode: "continue"`. Neither case is ever turned into
+  a fabricated intent.
 - Determinism: all time injected via `now()`; no module-scope `Date.now()`.
 - Secrets (`appSecret`, signing secrets, Wordless API key) stay in the host
   process; nothing is placed in customer-visible payloads. Choice payloads carry

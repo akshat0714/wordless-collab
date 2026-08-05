@@ -2,9 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   classifyChoiceFeedback,
   createSignedChoicePayload,
+  detectHumanRequest,
+  isShowChoicesRequest,
   verifySignedChoicePayload,
 } from "../src/channel-support.js";
-import { detectHumanRequest, isShowChoicesRequest } from "../src/channel-support.js";
 
 const SECRET = "unit-test-signing-secret-000000000000";
 const base = {

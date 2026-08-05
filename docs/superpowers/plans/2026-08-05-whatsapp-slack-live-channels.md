@@ -15,7 +15,7 @@
 - At most **3** choices per turn; the null-detector "not sure" choice is the only zero-evidence choice.
 - Choice payloads are HMAC-signed, nonce-bound, expiring, and one-time; carry only ids, a feedback code, timestamps, a nonce, and a signature — never secrets or PII.
 - All time is injected via a `now?: () => Date` option; **no module-scope `Date.now()` / `new Date()`** in mapping logic (tests inject a fixed clock).
-- Any Wordless or resolver error degrades to a safe `continue` (host bot proceeds); never a fabricated intent.
+- A `WordlessSdkError` from `chatbot.processMessage` always degrades to a safe `continue` (host bot proceeds). A `resolveAuthenticatedAccount` (resolver) outage propagates by default (`accountResolutionFailureMode` defaults to `"throw"` — fail-closed: the host webhook returns non-2xx and the platform retries), and only degrades to a safe `continue` when the host opts in with `accountResolutionFailureMode: "continue"`. Neither case is ever turned into a fabricated intent.
 - English-only; locale gating is the host's responsibility before calling the adapter.
 - Branch `feature/whatsapp-slack-live-channels`; PRs into `main`; never commit to `main`, never deploy, never add real credentials or customer data (`COLLABORATING.md`).
 - Verify each task from `sdk/`: `npm run typecheck && npm test`.

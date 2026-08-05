@@ -40,6 +40,12 @@ describe("parseSlackMessageEvent", () => {
     expect(parseSlackMessageEvent({ type: "event_callback", team_id: "T1", event: { type: "message", channel: "C1", user: "U1", ts: "1", subtype: "message_changed" } }, "UBOT")).toMatchObject({ ignored: "not_a_user_message" });
     expect(parseSlackMessageEvent({ type: "event_callback", team_id: "T1", event: { type: "message", channel: "C1", user: "UBOT", ts: "1", text: "x" } }, "UBOT")).toMatchObject({ ignored: "not_a_user_message" });
   });
+
+  it("ignores a message event with a non-numeric ts instead of parsing it", () => {
+    const body = { type: "event_callback", team_id: "T1",
+      event: { type: "message", channel: "C1", user: "U1", ts: "not-a-timestamp", text: "x" } };
+    expect(parseSlackMessageEvent(body, "UBOT")).toMatchObject({ ignored: "not_a_user_message" });
+  });
 });
 
 describe("parseSlackBlockActions", () => {
