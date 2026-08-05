@@ -7,7 +7,8 @@
     "paths": {
       "@wordless/sdk/server": ["./src/server.ts"],
       "@wordless/sdk/zendesk": ["./src/zendesk.ts"],
-      "@wordless/sdk/zendesk-marketplace": ["./src/zendesk-marketplace.ts"]
+      "@wordless/sdk/zendesk-marketplace": ["./src/zendesk-marketplace.ts"],
+      "@wordless/sdk/whatsapp": ["./src/whatsapp.ts"]
     },
     "lib": ["DOM", "ES2020"],
     "strict": true,
