@@ -25,24 +25,28 @@ npm run dev
 
 ## Get access
 
-Collaborators should be invited with **Read** access. Do not grant Write or
-Admin access. Read access lets a collaborator view and fork this private
-repository without letting them change the owner's repository directly.
+This repository belongs to a personal GitHub account. GitHub gives invited
+collaborators Write access to a private personal repository; Read-only access
+and enforced protected branches are not available on the owner's current plan.
+Invite only trusted people, and never grant Admin access or share account,
+Zendesk, deployment, or API credentials.
 
-## Make a change in a private fork
+## Make a change
 
-Use GitHub's **Fork** button, clone that private fork, and create a focused
-branch:
+Never work directly on `main`. Clone the repository and create a focused
+feature branch:
 
 ```sh
-git clone YOUR_PRIVATE_FORK_URL
+git clone https://github.com/akshat0714/wordless-collab.git
 cd wordless-collab
+git switch main
+git pull --ff-only
 git switch -c feature/short-description
 ```
 
-Run the relevant tests, commit the intended files, push the branch to the fork,
-and open a pull request into `akshat0714/wordless-collab:main`. The repository
-owner reviews and merges accepted work. A collaborator with Read access cannot
+Run the relevant tests, commit the intended files, push only the feature
+branch, and open a pull request into `main`. The repository owner reviews and
+merges accepted work. Do not force-push, delete tags, deploy the public site, or
 push directly to `main`.
 
 Do not commit `.env` files, credentials, customer data, generated audit output,
@@ -52,5 +56,10 @@ the checked-in example environment files and synthetic fixtures only.
 ## Release boundary
 
 The tag `current-release-2026-08-04` records the protected starting snapshot.
-The existing production site remains a separate deployed version. A pull
-request merge does not publish a website or connect a Zendesk tenant.
+The owner also keeps a separate local Git bundle outside this repository. The
+existing production site remains a separate deployed version. A push or pull
+request merge does not publish that website or connect a Zendesk tenant.
+
+For enforced private-branch protection, the owner can upgrade to GitHub Pro or
+move the repository to an eligible organization plan. Do not make the project
+public merely to enable branch protection.
