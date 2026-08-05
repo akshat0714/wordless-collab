@@ -9,7 +9,10 @@ import {
 } from "../src/whatsapp.js";
 import { buildWhatsAppSendRequest, WHATSAPP_SHOW_CHOICES_LABEL } from "../src/whatsapp.js";
 import { WhatsAppIntegrationError } from "../src/whatsapp.js";
+import { createWhatsAppCloudAdapter } from "../src/whatsapp.js";
+import type { WhatsAppChoiceStore, WhatsAppPendingChoiceSet, WhatsAppResolvedChoice } from "../src/whatsapp.js";
 import type { WordlessSupportChatTurn } from "../src/server.js";
+import { WordlessSdkError } from "../src/server.js";
 
 const APP_SECRET = "meta-app-secret-000000000000000000";
 function sign(body: string): string {
@@ -133,5 +136,117 @@ describe("buildWhatsAppSendRequest", () => {
         { id: "c2", label: "I don't know what to say", reply: "", detectorId: null, evidenceIndexes: [] },
       ] } as any;
     expect(() => buildWhatsAppSendRequest(INBOUND, turn, SIG, "nonceAA", 1000, 2000)).toThrow(WhatsAppIntegrationError);
+  });
+});
+
+const APP = "meta-app-secret-000000000000000000";
+function signBody(b: string) { return "sha256=" + createHmac("sha256", APP).update(b, "utf8").digest("hex"); }
+const FIXED = () => new Date("2023-11-14T22:13:30.000Z");
+
+function memoryStore(): WhatsAppChoiceStore {
+  const sets = new Map<string, WhatsAppPendingChoiceSet>();
+  const consumed = new Map<string, WhatsAppResolvedChoice>();
+  return {
+    async save(set) { for (const c of set.choices) sets.set(`${set.phoneNumberId}:${set.waId}:${c.payload}`, set); },
+    async resolve(input) {
+      const key = `${input.phoneNumberId}:${input.waId}:${input.payload}`;
+      const set = sets.get(key);
+      if (!set) return consumed.get(input.selectionMessageId) ?? null;
+      const choice = set.choices.find((c) => c.payload === input.payload)!;
+      const resolved: WhatsAppResolvedChoice = { suggestionId: set.suggestionId, choiceId: choice.id,
+        detectorId: choice.detectorId, reply: choice.reply, feedback: choice.feedback };
+      sets.delete(key); consumed.set(input.selectionMessageId, resolved);
+      return resolved;
+    },
+  };
+}
+
+function clarifyChatbot() {
+  return {
+    async processMessage() {
+      return { kind: "clarification_choices", hostAction: "show_wordless", renderMode: "choices",
+        suggestionId: "sg_" + "c".repeat(32), reviewRequired: true, readOnly: true, processingMs: 3,
+        message: "Did you mean:", detectorId: "duplicate_charge", evidenceIndexes: [0], reason: null,
+        choices: [
+          { id: "c1", label: "A duplicate charge", reply: "I was charged twice.", detectorId: "duplicate_charge", evidenceIndexes: [0] },
+          { id: "c2", label: "x", reply: "", detectorId: null, evidenceIndexes: [] },
+        ] } as any;
+    },
+    async recordConfirmation() { return { feedback_id: "fb_" + "0".repeat(32), recorded: true } as any; },
+  };
+}
+
+const account = { authenticated: true as const, customerId: "acct_42",
+  observedAt: "2023-11-14T22:13:25.000Z", evidence: [] };
+
+function textWebhook(body: string) {
+  return JSON.stringify({ object: "whatsapp_business_account", entry: [{ id: "e1", changes: [{ field: "messages", value: {
+    metadata: { phone_number_id: "111" }, contacts: [{ wa_id: "1555" }],
+    messages: [{ from: "1555", id: "wamid.text", timestamp: "1700000000", type: "text", text: { body } }] } }] }] });
+}
+
+describe("createWhatsAppCloudAdapter", () => {
+  it("posts clarification buttons for a supportable message", async () => {
+    const store = memoryStore();
+    const adapter = createWhatsAppCloudAdapter({ chatbot: clarifyChatbot() as any, appSecret: APP, phoneNumberId: "111",
+      choiceSigningSecret: "sig-secret-000000000000000000000000", resolveAuthenticatedAccount: async () => account,
+      choiceStore: store, now: FIXED });
+    const raw = textWebhook("charged twice");
+    const [result] = await adapter.processWebhook(raw, signBody(raw));
+    expect(result!.kind).toBe("post_message");
+    expect((result as any).request.body.type).toBe("interactive");
+  });
+
+  it("rejects a bad signature", async () => {
+    const adapter = createWhatsAppCloudAdapter({ chatbot: clarifyChatbot() as any, appSecret: APP, phoneNumberId: "111",
+      choiceSigningSecret: "sig-secret-000000000000000000000000", resolveAuthenticatedAccount: async () => account,
+      choiceStore: memoryStore(), now: FIXED });
+    await expect(adapter.processWebhook(textWebhook("x"), "sha256=bad")).rejects.toThrow();
+  });
+
+  it("continues the host bot when the account is unauthenticated", async () => {
+    const adapter = createWhatsAppCloudAdapter({ chatbot: clarifyChatbot() as any, appSecret: APP, phoneNumberId: "111",
+      choiceSigningSecret: "sig-secret-000000000000000000000000", resolveAuthenticatedAccount: async () => null,
+      choiceStore: memoryStore(), now: FIXED });
+    const raw = textWebhook("charged twice");
+    const [result] = await adapter.processWebhook(raw, signBody(raw));
+    expect(result).toMatchObject({ kind: "continue", reason: "account_not_authenticated" });
+  });
+
+  it("continues safely on a Wordless error", async () => {
+    const failing = { processMessage: async () => { throw new WordlessSdkError("boom"); },
+      recordConfirmation: async () => ({}) } as any;
+    const errors: unknown[] = [];
+    const adapter = createWhatsAppCloudAdapter({ chatbot: failing, appSecret: APP, phoneNumberId: "111",
+      choiceSigningSecret: "sig-secret-000000000000000000000000", resolveAuthenticatedAccount: async () => account,
+      choiceStore: memoryStore(), now: FIXED, onWordlessError: (e) => errors.push(e) });
+    const raw = textWebhook("charged twice");
+    const [result] = await adapter.processWebhook(raw, signBody(raw));
+    expect(result).toMatchObject({ kind: "continue", reason: "wordless_unavailable" });
+    expect(errors).toHaveLength(1);
+  });
+
+  it("resolves a tapped button once and records confirmation", async () => {
+    const store = memoryStore();
+    const recorded: unknown[] = [];
+    const chatbot = { ...clarifyChatbot(), recordConfirmation: async (c: unknown) => { recorded.push(c); return {} as any; } };
+    const adapter = createWhatsAppCloudAdapter({ chatbot: chatbot as any, appSecret: APP, phoneNumberId: "111",
+      choiceSigningSecret: "sig-secret-000000000000000000000000", resolveAuthenticatedAccount: async () => account,
+      choiceStore: store, now: FIXED });
+    const raw = textWebhook("charged twice");
+    const [posted] = await adapter.processWebhook(raw, signBody(raw));
+    const payload = (posted as any).request.body.interactive.action.buttons[0].reply.id as string;
+    const tap = JSON.stringify({ object: "whatsapp_business_account", entry: [{ id: "e", changes: [{ field: "messages", value: {
+      metadata: { phone_number_id: "111" }, contacts: [{ wa_id: "1555" }],
+      messages: [{ from: "1555", id: "wamid.tap", timestamp: "1700000005", type: "interactive",
+        interactive: { type: "button_reply", button_reply: { id: payload, title: "A duplicate charge" } } }] } }] }] });
+    const [replyResult] = await adapter.processWebhook(tap, signBody(tap));
+    expect(replyResult!.kind).toBe("post_message");
+    expect((replyResult as any).request.body.text.body).toContain("charged twice");
+    expect(recorded).toHaveLength(1);
+    // A replay of the same payload with a new message id resolves to null → continue.
+    const replay = tap.replace("wamid.tap", "wamid.tap2");
+    const [replayResult] = await adapter.processWebhook(replay, signBody(replay));
+    expect(replayResult).toMatchObject({ kind: "continue", reason: "choice_replayed" });
   });
 });

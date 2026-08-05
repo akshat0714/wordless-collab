@@ -1,13 +1,20 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 
 import {
   classifyChoiceFeedback,
   createSignedChoicePayload,
+  detectHumanRequest,
+  isShowChoicesRequest,
+  verifySignedChoicePayload,
   type ChoiceFeedback,
 } from "./channel-support.js";
-import type {
-  WordlessSupportChatTurn,
-  WordlessSupportChoice,
+import {
+  WordlessSdkError,
+  type WordlessEvidence,
+  type WordlessJsonValue,
+  type WordlessSupportChatbot,
+  type WordlessSupportChatTurn,
+  type WordlessSupportChoice,
 } from "./server.js";
 
 export class WhatsAppIntegrationError extends Error {
@@ -260,4 +267,179 @@ export function buildWhatsAppSendRequest(
     choices: Object.freeze(pending),
   });
   return Object.freeze({ request: Object.freeze({ method: "POST" as const, path, body }), pendingChoices });
+}
+
+const DEFAULT_CHOICE_TTL_MS = 30 * 60 * 1_000;
+const MAX_CHOICE_TTL_MS = 24 * 60 * 60 * 1_000;
+
+export interface WhatsAppAuthenticatedAccount {
+  readonly authenticated: true;
+  readonly customerId: string;
+  readonly observedAt: string;
+  readonly evidence: readonly WordlessEvidence[];
+  readonly metadata?: Readonly<Record<string, WordlessJsonValue>>;
+}
+
+export interface WhatsAppChoiceResolveInput {
+  readonly phoneNumberId: string;
+  readonly waId: string;
+  readonly payload: string;
+  readonly selectionMessageId: string;
+  readonly selectionReceivedAt: string;
+  readonly nonce: string;
+}
+
+export interface WhatsAppResolvedChoice {
+  readonly suggestionId: string;
+  readonly choiceId: string;
+  readonly detectorId: string | null;
+  readonly reply: string;
+  readonly feedback: ChoiceFeedback;
+}
+
+export interface WhatsAppChoiceStore {
+  save(set: WhatsAppPendingChoiceSet): Promise<void>;
+  resolve(input: WhatsAppChoiceResolveInput): Promise<WhatsAppResolvedChoice | null>;
+}
+
+export type WhatsAppContinueReason =
+  | "account_not_authenticated" | "wordless_unavailable" | "continue_host_bot" | "choice_replayed";
+
+interface WhatsAppResultBase { readonly inbound: WhatsAppInboundMessage; readonly deduplicationKey: string; }
+
+export interface WhatsAppPostMessageResult extends WhatsAppResultBase {
+  readonly kind: "post_message";
+  readonly request: WhatsAppSendRequest;
+  readonly pendingChoices: WhatsAppPendingChoiceSet | null;
+  readonly wordless: { readonly suggestionId: string; readonly outcome: WordlessSupportChatTurn["kind"]; readonly evidenceIndexes: readonly number[]; };
+}
+export interface WhatsAppContinueResult extends WhatsAppResultBase { readonly kind: "continue"; readonly reason: WhatsAppContinueReason; }
+export interface WhatsAppHandoffResult extends WhatsAppResultBase { readonly kind: "handoff"; readonly reason: "human_requested"; }
+export interface WhatsAppIgnoredResult { readonly kind: "ignored"; readonly reason: "status" | "unsupported_type" | "wrong_number"; readonly messageId: string | null; }
+export type WhatsAppResult = WhatsAppPostMessageResult | WhatsAppContinueResult | WhatsAppHandoffResult | WhatsAppIgnoredResult;
+
+export interface WhatsAppCloudAdapterOptions {
+  readonly chatbot: WordlessSupportChatbot;
+  readonly appSecret: string;
+  readonly phoneNumberId: string;
+  readonly choiceSigningSecret: string;
+  readonly resolveAuthenticatedAccount: (inbound: WhatsAppInboundMessage) => Promise<WhatsAppAuthenticatedAccount | null>;
+  readonly choiceStore: WhatsAppChoiceStore;
+  readonly humanHandoff?: { readonly enabled: boolean };
+  readonly accountResolutionFailureMode?: "throw" | "continue";
+  readonly choiceTtlMs?: number;
+  readonly now?: () => Date;
+  readonly onWordlessError?: (error: WordlessSdkError, inbound: WhatsAppInboundMessage) => void;
+  readonly onAccountResolutionError?: (error: unknown, inbound: WhatsAppInboundMessage) => void;
+  readonly onFeedbackError?: (error: unknown, inbound: WhatsAppInboundMessage) => void;
+}
+
+export interface WhatsAppCloudAdapter {
+  processWebhook(rawBody: string, signatureHeader: string | null): Promise<readonly WhatsAppResult[]>;
+}
+
+function randomNonce(): string {
+  // A per-choice-set random value; not time-derived, so it does not violate the injected-clock rule.
+  return randomBytes(12).toString("base64url");
+}
+
+export function createWhatsAppCloudAdapter(options: WhatsAppCloudAdapterOptions): WhatsAppCloudAdapter {
+  const ttl = options.choiceTtlMs ?? DEFAULT_CHOICE_TTL_MS;
+  if (!Number.isSafeInteger(ttl) || ttl < 60_000 || ttl > MAX_CHOICE_TTL_MS) {
+    throw new WhatsAppIntegrationError("choiceTtlMs must be between one minute and 24 hours.");
+  }
+  const now = options.now ?? (() => new Date());
+  const humanEnabled = options.humanHandoff?.enabled === true;
+
+  async function handleTextMessage(inbound: WhatsAppInboundMessage): Promise<WhatsAppResult> {
+    if (humanEnabled && inbound.text !== null && detectHumanRequest(inbound.text)) {
+      return Object.freeze({ kind: "handoff" as const, inbound, deduplicationKey: inbound.messageId, reason: "human_requested" as const });
+    }
+    let account: WhatsAppAuthenticatedAccount | null;
+    try {
+      account = await options.resolveAuthenticatedAccount(inbound);
+    } catch (error) {
+      if ((options.accountResolutionFailureMode ?? "throw") === "continue") {
+        options.onAccountResolutionError?.(error, inbound);
+        return Object.freeze({ kind: "continue" as const, inbound, deduplicationKey: inbound.messageId, reason: "account_not_authenticated" as const });
+      }
+      throw error;
+    }
+    if (account === null) {
+      return Object.freeze({ kind: "continue" as const, inbound, deduplicationKey: inbound.messageId, reason: "account_not_authenticated" as const });
+    }
+    let turn: WordlessSupportChatTurn;
+    try {
+      turn = await options.chatbot.processMessage({
+        messageId: inbound.messageId, customerId: account.customerId, text: inbound.text ?? "",
+        sentAt: inbound.receivedAt, observedAt: account.observedAt, channel: "chat",
+        evidence: account.evidence,
+        showChoices: isShowChoicesRequest(inbound.text, false),
+        ...(account.metadata !== undefined ? { metadata: account.metadata } : {}),
+      });
+    } catch (error) {
+      if (error instanceof WordlessSdkError) {
+        options.onWordlessError?.(error, inbound);
+        return Object.freeze({ kind: "continue" as const, inbound, deduplicationKey: inbound.messageId, reason: "wordless_unavailable" as const });
+      }
+      throw error;
+    }
+    if (turn.hostAction === "continue_host_bot") {
+      return Object.freeze({ kind: "continue" as const, inbound, deduplicationKey: inbound.messageId, reason: "continue_host_bot" as const });
+    }
+    const issuedAtSeconds = Math.floor(now().getTime() / 1_000);
+    const expiresAtSeconds = issuedAtSeconds + Math.ceil(ttl / 1_000);
+    const { request, pendingChoices } = buildWhatsAppSendRequest(inbound, turn, options.choiceSigningSecret, randomNonce(), issuedAtSeconds, expiresAtSeconds);
+    if (pendingChoices !== null) await options.choiceStore.save(pendingChoices);
+    return Object.freeze({ kind: "post_message" as const, inbound, deduplicationKey: inbound.messageId, request, pendingChoices,
+      wordless: Object.freeze({ suggestionId: turn.suggestionId, outcome: turn.kind, evidenceIndexes: turn.evidenceIndexes }) });
+  }
+
+  async function handleButtonReply(inbound: WhatsAppInboundMessage): Promise<WhatsAppResult> {
+    const payload = inbound.buttonPayload!;
+    const verified = verifySignedChoicePayload({
+      payload, bindingParts: [inbound.phoneNumberId, inbound.waId],
+      signingSecret: options.choiceSigningSecret, nowSeconds: Math.floor(now().getTime() / 1_000),
+    });
+    if (verified === null) {
+      return Object.freeze({ kind: "continue" as const, inbound, deduplicationKey: inbound.messageId, reason: "choice_replayed" as const });
+    }
+    const resolved = await options.choiceStore.resolve({
+      phoneNumberId: inbound.phoneNumberId, waId: inbound.waId, payload,
+      selectionMessageId: inbound.messageId, selectionReceivedAt: inbound.receivedAt, nonce: verified.nonce,
+    });
+    if (resolved === null) {
+      return Object.freeze({ kind: "continue" as const, inbound, deduplicationKey: inbound.messageId, reason: "choice_replayed" as const });
+    }
+    try {
+      await options.chatbot.recordConfirmation({
+        suggestionId: resolved.suggestionId, selectedDetectorId: resolved.detectorId,
+        actor: "customer", decisionId: inbound.messageId,
+      });
+    } catch (error) {
+      options.onFeedbackError?.(error, inbound);
+    }
+    const request: WhatsAppSendRequest = Object.freeze({ method: "POST" as const,
+      path: `/${encodeURIComponent(inbound.phoneNumberId)}/messages`,
+      body: textBody(inbound.waId, resolved.reply.length > 0 ? resolved.reply : "Thanks — noted.") });
+    return Object.freeze({ kind: "post_message" as const, inbound, deduplicationKey: inbound.messageId, request, pendingChoices: null,
+      wordless: Object.freeze({ suggestionId: resolved.suggestionId, outcome: "clarification_choices" as const, evidenceIndexes: Object.freeze([]) }) });
+  }
+
+  return Object.freeze({
+    async processWebhook(rawBody: string, signatureHeader: string | null): Promise<readonly WhatsAppResult[]> {
+      if (!verifyWhatsAppSignature(rawBody, signatureHeader, options.appSecret)) {
+        throw new WhatsAppWebhookValidationError("WhatsApp webhook signature is invalid.");
+      }
+      let parsedBody: unknown;
+      try { parsedBody = JSON.parse(rawBody); } catch { throw new WhatsAppWebhookValidationError("WhatsApp webhook body is not valid JSON."); }
+      const entries = parseWhatsAppEnvelope(parsedBody, options.phoneNumberId);
+      const results: WhatsAppResult[] = [];
+      for (const entry of entries) {
+        if (entry.kind === "ignored") { results.push(entry); continue; }
+        results.push(entry.inbound.type === "text" ? await handleTextMessage(entry.inbound) : await handleButtonReply(entry.inbound));
+      }
+      return Object.freeze(results);
+    },
+  });
 }
