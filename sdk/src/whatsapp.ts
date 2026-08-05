@@ -1,5 +1,15 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
+import {
+  classifyChoiceFeedback,
+  createSignedChoicePayload,
+  type ChoiceFeedback,
+} from "./channel-support.js";
+import type {
+  WordlessSupportChatTurn,
+  WordlessSupportChoice,
+} from "./server.js";
+
 export class WhatsAppIntegrationError extends Error {
   constructor(message: string, options?: { readonly cause?: unknown }) {
     super(message);
@@ -141,4 +151,113 @@ export function parseWhatsAppEnvelope(
     }
   }
   return Object.freeze(results);
+}
+
+export type WhatsAppJsonValue =
+  | null | boolean | number | string
+  | readonly WhatsAppJsonValue[]
+  | { readonly [key: string]: WhatsAppJsonValue };
+
+export const WHATSAPP_SHOW_CHOICES_LABEL = "Not sure what to say";
+const MAX_BUTTON_TITLE = 20;
+const MAX_BUTTONS = 3;
+const MAX_BUTTON_ID = 256;
+
+export interface WhatsAppSendRequest {
+  readonly method: "POST";
+  readonly path: string;
+  readonly body: WhatsAppJsonValue;
+}
+
+export interface WhatsAppPendingChoice {
+  readonly payload: string;
+  readonly id: string;
+  readonly label: string;
+  readonly reply: string;
+  readonly detectorId: string | null;
+  readonly feedback: ChoiceFeedback;
+  readonly evidenceIndexes: readonly number[];
+}
+
+export interface WhatsAppPendingChoiceSet {
+  readonly phoneNumberId: string;
+  readonly waId: string;
+  readonly suggestionId: string;
+  readonly sourceMessageId: string;
+  readonly nonce: string;
+  readonly issuedAt: string;
+  readonly expiresAt: string;
+  readonly choices: readonly WhatsAppPendingChoice[];
+}
+
+function buttonTitle(turn: WordlessSupportChatTurn, choice: WordlessSupportChoice): string {
+  const label = choice.detectorId === null ? WHATSAPP_SHOW_CHOICES_LABEL : choice.label;
+  if (label.length > MAX_BUTTON_TITLE) {
+    throw new WhatsAppIntegrationError(
+      `WhatsApp reply-button title must be at most ${MAX_BUTTON_TITLE} characters: "${label}".`,
+    );
+  }
+  return label;
+}
+
+function textBody(waId: string, text: string): WhatsAppJsonValue {
+  return Object.freeze({
+    messaging_product: "whatsapp", recipient_type: "individual", to: waId,
+    type: "text", text: Object.freeze({ body: text, preview_url: false }),
+  });
+}
+
+export function buildWhatsAppSendRequest(
+  inbound: WhatsAppInboundMessage,
+  turn: WordlessSupportChatTurn,
+  signingSecret: string,
+  nonce: string,
+  issuedAtSeconds: number,
+  expiresAtSeconds: number,
+): { readonly request: WhatsAppSendRequest; readonly pendingChoices: WhatsAppPendingChoiceSet | null } {
+  if (turn.message === null) {
+    throw new WhatsAppIntegrationError("A visible WhatsApp turn must contain a message.");
+  }
+  const path = `/${encodeURIComponent(inbound.phoneNumberId)}/messages`;
+  if (turn.renderMode !== "choices" || turn.choices.length === 0) {
+    return Object.freeze({ request: Object.freeze({ method: "POST" as const, path, body: textBody(inbound.waId, turn.message) }), pendingChoices: null });
+  }
+  if (turn.choices.length > MAX_BUTTONS) {
+    throw new WhatsAppIntegrationError(`WhatsApp supports at most ${MAX_BUTTONS} reply buttons.`);
+  }
+  const pending: WhatsAppPendingChoice[] = [];
+  const buttons = turn.choices.map((choice) => {
+    const feedback = classifyChoiceFeedback(turn.kind, choice.detectorId);
+    const payload = createSignedChoicePayload({
+      bindingParts: [inbound.phoneNumberId, inbound.waId],
+      suggestionId: turn.suggestionId, choiceId: choice.id, detectorId: choice.detectorId,
+      feedback, issuedAtSeconds, expiresAtSeconds, nonce, signingSecret,
+    });
+    if (payload.length > MAX_BUTTON_ID) {
+      throw new WhatsAppIntegrationError("WhatsApp reply-button id exceeds 256 characters.");
+    }
+    const title = buttonTitle(turn, choice);
+    pending.push(Object.freeze({
+      payload, id: choice.id, label: title, reply: choice.reply,
+      detectorId: choice.detectorId, feedback, evidenceIndexes: choice.evidenceIndexes,
+    }));
+    return Object.freeze({ type: "reply", reply: Object.freeze({ id: payload, title }) });
+  });
+  const body: WhatsAppJsonValue = Object.freeze({
+    messaging_product: "whatsapp", recipient_type: "individual", to: inbound.waId,
+    type: "interactive",
+    interactive: Object.freeze({
+      type: "button",
+      body: Object.freeze({ text: turn.message }),
+      action: Object.freeze({ buttons: Object.freeze(buttons) }),
+    }),
+  });
+  const pendingChoices: WhatsAppPendingChoiceSet = Object.freeze({
+    phoneNumberId: inbound.phoneNumberId, waId: inbound.waId, suggestionId: turn.suggestionId,
+    sourceMessageId: inbound.messageId, nonce,
+    issuedAt: new Date(issuedAtSeconds * 1_000).toISOString(),
+    expiresAt: new Date(expiresAtSeconds * 1_000).toISOString(),
+    choices: Object.freeze(pending),
+  });
+  return Object.freeze({ request: Object.freeze({ method: "POST" as const, path, body }), pendingChoices });
 }

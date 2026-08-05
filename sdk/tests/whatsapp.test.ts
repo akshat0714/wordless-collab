@@ -7,6 +7,9 @@ import {
   verifyWhatsAppSubscription,
   WhatsAppWebhookValidationError,
 } from "../src/whatsapp.js";
+import { buildWhatsAppSendRequest, WHATSAPP_SHOW_CHOICES_LABEL } from "../src/whatsapp.js";
+import { WhatsAppIntegrationError } from "../src/whatsapp.js";
+import type { WordlessSupportChatTurn } from "../src/server.js";
 
 const APP_SECRET = "meta-app-secret-000000000000000000";
 function sign(body: string): string {
@@ -83,5 +86,52 @@ describe("parseWhatsAppEnvelope", () => {
 
     const overBound = { object: "whatsapp_business_account", entry: [{ id: "e", changes: Array(51).fill(change) }] };
     expect(() => parseWhatsAppEnvelope(overBound, PN)).toThrow(WhatsAppWebhookValidationError);
+  });
+});
+
+const INBOUND = { phoneNumberId: "111", waId: "1555", messageId: "wamid.1",
+  receivedAt: "2023-11-14T22:13:20.000Z", type: "text", text: "charged twice", buttonPayload: null } as const;
+const SIG = "sig-secret-000000000000000000000000";
+const SUG = "sg_" + "b".repeat(32);
+
+function turnBase(kind: WordlessSupportChatTurn["kind"]) {
+  return { suggestionId: SUG, reviewRequired: true, readOnly: true, processingMs: 5, kind } as const;
+}
+
+describe("buildWhatsAppSendRequest", () => {
+  it("maps a grounded_reply to a text message", () => {
+    const turn = { ...turnBase("grounded_reply"), hostAction: "show_wordless", renderMode: "message",
+      message: "Your last charge was $20 on Tuesday.", choices: [], detectorId: null, evidenceIndexes: [0], reason: null } as any;
+    const { request, pendingChoices } = buildWhatsAppSendRequest(INBOUND, turn, SIG, "nonceAA", 1000, 2000);
+    expect(request.path).toBe("/111/messages");
+    expect((request.body as any).type).toBe("text");
+    expect((request.body as any).text.body).toContain("last charge");
+    expect(pendingChoices).toBeNull();
+  });
+
+  it("maps clarification_choices to interactive buttons with the short show-choices label", () => {
+    const turn = { ...turnBase("clarification_choices"), hostAction: "show_wordless", renderMode: "choices",
+      message: "Did you mean:", detectorId: "duplicate_charge", evidenceIndexes: [0], reason: null,
+      choices: [
+        { id: "c1", label: "A duplicate charge", reply: "I think I was charged twice.", detectorId: "duplicate_charge", evidenceIndexes: [0] },
+        { id: "c2", label: "I don't know what to say", reply: "", detectorId: null, evidenceIndexes: [] },
+      ] } as any;
+    const { request, pendingChoices } = buildWhatsAppSendRequest(INBOUND, turn, SIG, "nonceAA", 1000, 2000);
+    const buttons = (request.body as any).interactive.action.buttons;
+    expect(buttons).toHaveLength(2);
+    expect(buttons[0].reply.title).toBe("A duplicate charge");
+    expect(buttons[1].reply.title).toBe(WHATSAPP_SHOW_CHOICES_LABEL);
+    expect(buttons[0].reply.id.startsWith("wl2.")).toBe(true);
+    expect(pendingChoices?.choices).toHaveLength(2);
+  });
+
+  it("raises on an over-long detector label", () => {
+    const turn = { ...turnBase("clarification_choices"), hostAction: "show_wordless", renderMode: "choices",
+      message: "Did you mean:", detectorId: "duplicate_charge", evidenceIndexes: [0], reason: null,
+      choices: [
+        { id: "c1", label: "This label is definitely longer than twenty", reply: "x", detectorId: "duplicate_charge", evidenceIndexes: [0] },
+        { id: "c2", label: "I don't know what to say", reply: "", detectorId: null, evidenceIndexes: [] },
+      ] } as any;
+    expect(() => buildWhatsAppSendRequest(INBOUND, turn, SIG, "nonceAA", 1000, 2000)).toThrow(WhatsAppIntegrationError);
   });
 });
