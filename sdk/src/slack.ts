@@ -1,6 +1,9 @@
 // sdk/src/slack.ts
 import { createHmac, timingSafeEqual } from "node:crypto";
 
+import { classifyChoiceFeedback, createSignedChoicePayload, type ChoiceFeedback } from "./channel-support.js";
+import type { WordlessSupportChatTurn } from "./server.js";
+
 const MAX_TIMESTAMP_SKEW_SECONDS = 5 * 60;
 
 export class SlackIntegrationError extends Error {
@@ -88,4 +91,69 @@ export function parseSlackBlockActions(parsedPayload: unknown): SlackInboundActi
   const actionTs = str(action.action_ts, 64) ?? str(parsedPayload.action_ts as unknown, 64) ?? "0";
   if (team === null || user === null || channel === null || value === null) return { ignored: "not_a_button_action" };
   return Object.freeze({ teamId: team, channelId: channel, userId: user, actionTs, responseUrl: str(parsedPayload.response_url, 1_024), value });
+}
+
+export type SlackJsonValue =
+  | null | boolean | number | string
+  | readonly SlackJsonValue[]
+  | { readonly [key: string]: SlackJsonValue };
+
+export const SLACK_SHOW_CHOICES_LABEL = "I don't know what to say";
+const SLACK_MAX_BUTTONS = 3;
+const SLACK_MAX_BUTTON_TEXT = 75;
+const SLACK_MAX_BUTTON_VALUE = 2_000;
+
+export interface SlackPostMessageRequest { readonly method: "POST"; readonly path: "/chat.postMessage"; readonly body: SlackJsonValue; }
+export interface SlackPendingChoice {
+  readonly payload: string; readonly id: string; readonly label: string; readonly reply: string;
+  readonly detectorId: string | null; readonly feedback: ChoiceFeedback; readonly evidenceIndexes: readonly number[];
+}
+export interface SlackPendingChoiceSet {
+  readonly teamId: string; readonly channelId: string; readonly userId: string; readonly suggestionId: string;
+  readonly sourceMessageTs: string; readonly nonce: string; readonly issuedAt: string; readonly expiresAt: string;
+  readonly choices: readonly SlackPendingChoice[];
+}
+
+export function buildSlackPostMessage(
+  inbound: { readonly teamId: string; readonly channelId: string; readonly userId: string; readonly messageTs: string },
+  turn: WordlessSupportChatTurn,
+  signingSecret: string,
+  nonce: string,
+  issuedAtSeconds: number,
+  expiresAtSeconds: number,
+): { readonly request: SlackPostMessageRequest; readonly pendingChoices: SlackPendingChoiceSet | null } {
+  if (turn.message === null) throw new SlackIntegrationError("A visible Slack turn must contain a message.");
+  const path = "/chat.postMessage" as const;
+  if (turn.renderMode !== "choices" || turn.choices.length === 0) {
+    return Object.freeze({ request: Object.freeze({ method: "POST" as const, path, body: Object.freeze({ channel: inbound.channelId, text: turn.message }) }), pendingChoices: null });
+  }
+  if (turn.choices.length > SLACK_MAX_BUTTONS) throw new SlackIntegrationError(`Slack channel supports at most ${SLACK_MAX_BUTTONS} buttons.`);
+  const pending: SlackPendingChoice[] = [];
+  const elements = turn.choices.map((choice) => {
+    const feedback = classifyChoiceFeedback(turn.kind, choice.detectorId);
+    const payload = createSignedChoicePayload({
+      bindingParts: [inbound.teamId, inbound.channelId, inbound.userId],
+      suggestionId: turn.suggestionId, choiceId: choice.id, detectorId: choice.detectorId,
+      feedback, issuedAtSeconds, expiresAtSeconds, nonce, signingSecret,
+    });
+    if (payload.length > SLACK_MAX_BUTTON_VALUE) throw new SlackIntegrationError("Slack button value exceeds 2000 characters.");
+    const label = choice.detectorId === null ? SLACK_SHOW_CHOICES_LABEL : choice.label;
+    if (label.length > SLACK_MAX_BUTTON_TEXT) throw new SlackIntegrationError(`Slack button text exceeds ${SLACK_MAX_BUTTON_TEXT} characters.`);
+    pending.push(Object.freeze({ payload, id: choice.id, label, reply: choice.reply, detectorId: choice.detectorId, feedback, evidenceIndexes: choice.evidenceIndexes }));
+    return Object.freeze({ type: "button", action_id: choice.id, text: Object.freeze({ type: "plain_text", text: label }), value: payload });
+  });
+  const body: SlackJsonValue = Object.freeze({
+    channel: inbound.channelId, text: turn.message,
+    blocks: Object.freeze([
+      Object.freeze({ type: "section", text: Object.freeze({ type: "mrkdwn", text: turn.message }) }),
+      Object.freeze({ type: "actions", elements: Object.freeze(elements) }),
+    ]),
+  });
+  const pendingChoices: SlackPendingChoiceSet = Object.freeze({
+    teamId: inbound.teamId, channelId: inbound.channelId, userId: inbound.userId, suggestionId: turn.suggestionId,
+    sourceMessageTs: inbound.messageTs, nonce,
+    issuedAt: new Date(issuedAtSeconds * 1_000).toISOString(), expiresAt: new Date(expiresAtSeconds * 1_000).toISOString(),
+    choices: Object.freeze(pending),
+  });
+  return Object.freeze({ request: Object.freeze({ method: "POST" as const, path, body }), pendingChoices });
 }
