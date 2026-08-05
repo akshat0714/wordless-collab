@@ -117,3 +117,47 @@ export interface VerifiedChoicePayload {
   readonly expiresAtSeconds: number;
   readonly nonce: string;
 }
+
+export const SHOW_CHOICES_TEXT_PATTERN =
+  /^(?:i\s+)?(?:do not|don't|dont)\s+know\s+what\s+to\s+say[.!?]?$/iu;
+
+export function isShowChoicesRequest(text: string | null, payloadMatched: boolean): boolean {
+  if (payloadMatched) return true;
+  const trimmed = (text ?? "").trim();
+  return trimmed.length === 0 || SHOW_CHOICES_TEXT_PATTERN.test(trimmed);
+}
+
+const HUMAN_ROLE = new Set([
+  "human", "person", "agent", "representative", "rep", "operator", "supervisor",
+  "manager", "someone", "somebody", "advisor", "associate", "specialist", "staff",
+]);
+const REQUEST_CUE = new Set([
+  "talk", "speak", "chat", "connect", "transfer", "escalate", "reach", "contact",
+  "want", "need", "prefer", "get", "let", "put", "give", "call", "route", "forward", "pass",
+]);
+const NEGATION = new Set([
+  "not", "dont", "don", "cant", "cannot", "never", "no", "wont", "wouldnt", "didnt", "stop",
+]);
+const REPORTING = new Set(["said", "asked", "told", "requested", "mentioned", "say", "ask"]);
+const BOT_PREFERENCE = /\bkeep\s+(?:me\s+)?(?:with\s+)?(?:the\s+)?(?:bot|chatbot|robot)\b/iu;
+const RETRACTION = /^(?:never\s*mind|cancel\s+that|forget\s+it|scratch\s+that|no\s+thanks?)\b/iu;
+const NON_SUPPORT = /\b(?:courier|driver|delivery|postman|mailman)\b/iu;
+
+function tokenize(text: string): string[] {
+  return text.toLowerCase().replace(/['’]/gu, "").split(/[^a-z]+/u).filter((t) => t.length > 0);
+}
+
+export function detectHumanRequest(text: string): boolean {
+  if (typeof text !== "string") return false;
+  const trimmed = text.trim();
+  if (trimmed.length === 0 || trimmed.length > 400) return false;
+  if (RETRACTION.test(trimmed) || BOT_PREFERENCE.test(trimmed) || NON_SUPPORT.test(trimmed)) return false;
+  const tokens = tokenize(trimmed);
+  const roleIndex = tokens.findIndex((t) => HUMAN_ROLE.has(t));
+  if (roleIndex < 0) return false;
+  const leading = tokens.slice(0, roleIndex);
+  if (leading.some((t) => NEGATION.has(t)) || leading.some((t) => REPORTING.has(t))) return false;
+  // A bare role ("human") or a role preceded by a request cue counts.
+  if (tokens.length === 1) return true;
+  return leading.some((t) => REQUEST_CUE.has(t)) || roleIndex === 0;
+}

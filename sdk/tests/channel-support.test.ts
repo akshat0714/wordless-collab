@@ -4,6 +4,7 @@ import {
   createSignedChoicePayload,
   verifySignedChoicePayload,
 } from "../src/channel-support.js";
+import { detectHumanRequest, isShowChoicesRequest } from "../src/channel-support.js";
 
 const SECRET = "unit-test-signing-secret-000000000000";
 const base = {
@@ -60,5 +61,35 @@ describe("signed choice payloads", () => {
 
   it("rejects a malformed payload", () => {
     expect(verifySignedChoicePayload({ payload: "not-a-payload", bindingParts: base.bindingParts, signingSecret: SECRET, nowSeconds: 1_500 })).toBeNull();
+  });
+});
+
+describe("isShowChoicesRequest", () => {
+  it("is true for empty text, the phrase, or a matched payload", () => {
+    expect(isShowChoicesRequest("", false)).toBe(true);
+    expect(isShowChoicesRequest("   ", false)).toBe(true);
+    expect(isShowChoicesRequest("I don't know what to say", false)).toBe(true);
+    expect(isShowChoicesRequest("i dont know what to say", false)).toBe(true);
+    expect(isShowChoicesRequest("anything", true)).toBe(true);
+  });
+  it("is false for ordinary text", () => {
+    expect(isShowChoicesRequest("where is my order", false)).toBe(false);
+  });
+});
+
+describe("detectHumanRequest", () => {
+  it("detects explicit handoff requests", () => {
+    for (const text of [
+      "talk to a human", "I want to speak to an agent", "connect me to a person",
+      "can I talk to a real person", "transfer me to a representative", "get me a manager please",
+      "let me speak with someone", "I need a live agent",
+    ]) expect(detectHumanRequest(text), text).toBe(true);
+  });
+  it("ignores negated, retracted, reported, or bot-preferring text", () => {
+    for (const text of [
+      "I don't want to talk to a human", "never mind, cancel that",
+      "I never asked for an agent", "keep me with the bot",
+      "where is my refund", "the courier is a real person",
+    ]) expect(detectHumanRequest(text), text).toBe(false);
   });
 });
