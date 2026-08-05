@@ -1,8 +1,14 @@
 // sdk/src/slack.ts
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 
-import { classifyChoiceFeedback, createSignedChoicePayload, type ChoiceFeedback } from "./channel-support.js";
-import type { WordlessSupportChatTurn } from "./server.js";
+import {
+  classifyChoiceFeedback, createSignedChoicePayload, detectHumanRequest,
+  isShowChoicesRequest, verifySignedChoicePayload, type ChoiceFeedback,
+} from "./channel-support.js";
+import {
+  WordlessSdkError, type WordlessEvidence, type WordlessJsonValue,
+  type WordlessSupportChatbot, type WordlessSupportChatTurn,
+} from "./server.js";
 
 const MAX_TIMESTAMP_SKEW_SECONDS = 5 * 60;
 
@@ -156,4 +162,124 @@ export function buildSlackPostMessage(
     choices: Object.freeze(pending),
   });
   return Object.freeze({ request: Object.freeze({ method: "POST" as const, path, body }), pendingChoices });
+}
+
+const S_DEFAULT_TTL_MS = 30 * 60 * 1_000;
+const S_MAX_TTL_MS = 24 * 60 * 60 * 1_000;
+
+export interface SlackAuthenticatedAccount {
+  readonly authenticated: true; readonly customerId: string; readonly observedAt: string;
+  readonly evidence: readonly WordlessEvidence[]; readonly metadata?: Readonly<Record<string, WordlessJsonValue>>;
+}
+export interface SlackChoiceResolveInput {
+  readonly teamId: string; readonly channelId: string; readonly userId: string; readonly payload: string;
+  readonly selectionActionTs: string; readonly nonce: string;
+}
+export interface SlackResolvedChoice {
+  readonly suggestionId: string; readonly choiceId: string; readonly detectorId: string | null;
+  readonly reply: string; readonly feedback: ChoiceFeedback;
+}
+export interface SlackChoiceStore {
+  save(set: SlackPendingChoiceSet): Promise<void>;
+  resolve(input: SlackChoiceResolveInput): Promise<SlackResolvedChoice | null>;
+}
+
+export type SlackContinueReason = "account_not_authenticated" | "wordless_unavailable" | "continue_host_bot" | "choice_replayed";
+interface SlackResultBase { readonly deduplicationKey: string; }
+export interface SlackPostMessageResult extends SlackResultBase {
+  readonly kind: "post_message"; readonly request: SlackPostMessageRequest; readonly pendingChoices: SlackPendingChoiceSet | null;
+  readonly wordless: { readonly suggestionId: string; readonly outcome: WordlessSupportChatTurn["kind"]; readonly evidenceIndexes: readonly number[]; };
+}
+export interface SlackContinueResult extends SlackResultBase { readonly kind: "continue"; readonly reason: SlackContinueReason; }
+export interface SlackHandoffResult extends SlackResultBase { readonly kind: "handoff"; readonly reason: "human_requested"; }
+export interface SlackIgnoredResult { readonly kind: "ignored"; readonly reason: "not_a_user_message" | "not_a_button_action"; }
+export type SlackResult = SlackPostMessageResult | SlackContinueResult | SlackHandoffResult | SlackIgnoredResult;
+export type SlackEventOutcome = { readonly kind: "url_verification"; readonly challenge: string } | { readonly kind: "result"; readonly result: SlackResult } | { readonly kind: "ignored" };
+
+export interface SlackAdapterOptions {
+  readonly chatbot: WordlessSupportChatbot;
+  readonly signingSecret: string;
+  readonly choiceSigningSecret: string;
+  readonly selfBotUserId: string;
+  readonly resolveAuthenticatedAccount: (inbound: SlackInboundMessage) => Promise<SlackAuthenticatedAccount | null>;
+  readonly choiceStore: SlackChoiceStore;
+  readonly humanHandoff?: { readonly enabled: boolean };
+  readonly accountResolutionFailureMode?: "throw" | "continue";
+  readonly choiceTtlMs?: number;
+  readonly now?: () => Date;
+  readonly onWordlessError?: (error: WordlessSdkError, inbound: SlackInboundMessage) => void;
+  readonly onAccountResolutionError?: (error: unknown, inbound: SlackInboundMessage) => void;
+  readonly onFeedbackError?: (error: unknown, inbound: SlackInboundAction) => void;
+}
+
+export interface SlackAdapter {
+  processEvent(rawBody: string, headers: { readonly signature: string | null; readonly timestamp: string | null }): Promise<SlackEventOutcome>;
+  processInteraction(rawBody: string, headers: { readonly signature: string | null; readonly timestamp: string | null }): Promise<SlackResult>;
+}
+
+export function createSlackAdapter(options: SlackAdapterOptions): SlackAdapter {
+  const ttl = options.choiceTtlMs ?? S_DEFAULT_TTL_MS;
+  if (!Number.isSafeInteger(ttl) || ttl < 60_000 || ttl > S_MAX_TTL_MS) throw new SlackIntegrationError("choiceTtlMs must be between one minute and 24 hours.");
+  const now = options.now ?? (() => new Date());
+  const humanEnabled = options.humanHandoff?.enabled === true;
+
+  async function onMessage(inbound: SlackInboundMessage): Promise<SlackResult> {
+    if (humanEnabled && detectHumanRequest(inbound.text)) {
+      return Object.freeze({ kind: "handoff" as const, deduplicationKey: inbound.messageTs, reason: "human_requested" as const });
+    }
+    let account: SlackAuthenticatedAccount | null;
+    try { account = await options.resolveAuthenticatedAccount(inbound); }
+    catch (error) {
+      if ((options.accountResolutionFailureMode ?? "throw") === "continue") { options.onAccountResolutionError?.(error, inbound); return Object.freeze({ kind: "continue" as const, deduplicationKey: inbound.messageTs, reason: "account_not_authenticated" as const }); }
+      throw error;
+    }
+    if (account === null) return Object.freeze({ kind: "continue" as const, deduplicationKey: inbound.messageTs, reason: "account_not_authenticated" as const });
+    let turn: WordlessSupportChatTurn;
+    try {
+      turn = await options.chatbot.processMessage({ messageId: inbound.messageTs, customerId: account.customerId, text: inbound.text,
+        sentAt: new Date(Math.floor(Number.parseFloat(inbound.messageTs) * 1_000)).toISOString(), observedAt: account.observedAt, channel: "chat",
+        evidence: account.evidence, showChoices: isShowChoicesRequest(inbound.text, false),
+        ...(account.metadata !== undefined ? { metadata: account.metadata } : {}) });
+    } catch (error) {
+      if (error instanceof WordlessSdkError) { options.onWordlessError?.(error, inbound); return Object.freeze({ kind: "continue" as const, deduplicationKey: inbound.messageTs, reason: "wordless_unavailable" as const }); }
+      throw error;
+    }
+    if (turn.hostAction === "continue_host_bot") return Object.freeze({ kind: "continue" as const, deduplicationKey: inbound.messageTs, reason: "continue_host_bot" as const });
+    const issuedAtSeconds = Math.floor(now().getTime() / 1_000);
+    const expiresAtSeconds = issuedAtSeconds + Math.ceil(ttl / 1_000);
+    const { request, pendingChoices } = buildSlackPostMessage(inbound, turn, options.choiceSigningSecret, randomBytes(12).toString("base64url"), issuedAtSeconds, expiresAtSeconds);
+    if (pendingChoices !== null) await options.choiceStore.save(pendingChoices);
+    return Object.freeze({ kind: "post_message" as const, deduplicationKey: inbound.messageTs, request, pendingChoices,
+      wordless: Object.freeze({ suggestionId: turn.suggestionId, outcome: turn.kind, evidenceIndexes: turn.evidenceIndexes }) });
+  }
+
+  return Object.freeze({
+    async processEvent(rawBody: string, headers: { readonly signature: string | null; readonly timestamp: string | null }): Promise<SlackEventOutcome> {
+      if (!verifySlackSignature(rawBody, headers, options.signingSecret, now)) throw new SlackWebhookValidationError("Slack signature is invalid.");
+      let parsed: unknown; try { parsed = JSON.parse(rawBody); } catch { throw new SlackWebhookValidationError("Slack event body is not valid JSON."); }
+      const challenge = verifySlackUrlVerification(parsed);
+      if (challenge !== null) return Object.freeze({ kind: "url_verification" as const, challenge });
+      const message = parseSlackMessageEvent(parsed, options.selfBotUserId);
+      if ("ignored" in message) return Object.freeze({ kind: "ignored" as const });
+      return Object.freeze({ kind: "result" as const, result: await onMessage(message) });
+    },
+    async processInteraction(rawBody: string, headers: { readonly signature: string | null; readonly timestamp: string | null }): Promise<SlackResult> {
+      if (!verifySlackSignature(rawBody, headers, options.signingSecret, now)) throw new SlackWebhookValidationError("Slack signature is invalid.");
+      const params = new URLSearchParams(rawBody);
+      const raw = params.get("payload");
+      if (raw === null) throw new SlackWebhookValidationError("Slack interaction is missing a payload.");
+      let parsed: unknown; try { parsed = JSON.parse(raw); } catch { throw new SlackWebhookValidationError("Slack interaction payload is not valid JSON."); }
+      const action = parseSlackBlockActions(parsed);
+      if ("ignored" in action) return Object.freeze({ kind: "ignored" as const, reason: "not_a_button_action" as const });
+      const verified = verifySignedChoicePayload({ payload: action.value, bindingParts: [action.teamId, action.channelId, action.userId], signingSecret: options.choiceSigningSecret, nowSeconds: Math.floor(now().getTime() / 1_000) });
+      if (verified === null) return Object.freeze({ kind: "continue" as const, deduplicationKey: action.actionTs, reason: "choice_replayed" as const });
+      const resolved = await options.choiceStore.resolve({ teamId: action.teamId, channelId: action.channelId, userId: action.userId, payload: action.value, selectionActionTs: action.actionTs, nonce: verified.nonce });
+      if (resolved === null) return Object.freeze({ kind: "continue" as const, deduplicationKey: action.actionTs, reason: "choice_replayed" as const });
+      try { await options.chatbot.recordConfirmation({ suggestionId: resolved.suggestionId, selectedDetectorId: resolved.detectorId, actor: "customer", decisionId: action.actionTs }); }
+      catch (error) { options.onFeedbackError?.(error, action); }
+      const request: SlackPostMessageRequest = Object.freeze({ method: "POST" as const, path: "/chat.postMessage" as const, body: Object.freeze({ channel: action.channelId, text: resolved.reply.length > 0 ? resolved.reply : "Thanks — noted." }) });
+      return Object.freeze({ kind: "post_message" as const, deduplicationKey: action.actionTs, request, pendingChoices: null,
+        wordless: Object.freeze({ suggestionId: resolved.suggestionId, outcome: "clarification_choices" as const, evidenceIndexes: Object.freeze([]) }) });
+    },
+  });
 }
