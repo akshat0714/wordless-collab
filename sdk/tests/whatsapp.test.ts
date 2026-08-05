@@ -73,4 +73,15 @@ describe("parseWhatsAppEnvelope", () => {
 
     expect(parseWhatsAppEnvelope(textEnvelope("x"), "999")[0]).toMatchObject({ kind: "ignored", reason: "wrong_number" });
   });
+
+  it("bounds the number of changes processed per entry", () => {
+    const change = { field: "messages", value: {
+      metadata: { phone_number_id: PN }, statuses: [{ id: "wamid.s", status: "delivered" }],
+    } };
+    const withinBound = { object: "whatsapp_business_account", entry: [{ id: "e", changes: Array(50).fill(change) }] };
+    expect(() => parseWhatsAppEnvelope(withinBound, PN)).not.toThrow();
+
+    const overBound = { object: "whatsapp_business_account", entry: [{ id: "e", changes: Array(51).fill(change) }] };
+    expect(() => parseWhatsAppEnvelope(overBound, PN)).toThrow(WhatsAppWebhookValidationError);
+  });
 });

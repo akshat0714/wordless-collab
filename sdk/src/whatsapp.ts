@@ -48,6 +48,7 @@ export function verifyWhatsAppSubscription(
 }
 
 const MAX_ENTRIES = 50;
+const MAX_CHANGES = 50;
 const MAX_MESSAGES = 50;
 const MAX_TEXT_LENGTH = 4_000;
 
@@ -90,6 +91,9 @@ export function parseWhatsAppEnvelope(
   const results: WhatsAppParsedEntry[] = [];
   for (const entry of value.entry) {
     if (!isRecord(entry) || !Array.isArray(entry.changes)) continue;
+    if (entry.changes.length > MAX_CHANGES) {
+      throw new WhatsAppWebhookValidationError("Too many WhatsApp changes in one webhook entry.");
+    }
     for (const change of entry.changes) {
       if (!isRecord(change) || change.field !== "messages" || !isRecord(change.value)) continue;
       const val = change.value;
