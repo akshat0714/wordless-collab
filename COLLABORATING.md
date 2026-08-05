@@ -23,18 +23,27 @@ npm ci
 npm run dev
 ```
 
-## Make a change
+## Get access
 
-Never commit directly to `main`. Create a focused branch:
+Collaborators should be invited with **Read** access. Do not grant Write or
+Admin access. Read access lets a collaborator view and fork this private
+repository without letting them change the owner's repository directly.
+
+## Make a change in a private fork
+
+Use GitHub's **Fork** button, clone that private fork, and create a focused
+branch:
 
 ```sh
-git switch main
-git pull --ff-only
+git clone YOUR_PRIVATE_FORK_URL
+cd wordless-collab
 git switch -c feature/short-description
 ```
 
-Run the relevant tests, commit the intended files, push the branch, and open a
-pull request. The repository owner reviews and merges accepted work.
+Run the relevant tests, commit the intended files, push the branch to the fork,
+and open a pull request into `akshat0714/wordless-collab:main`. The repository
+owner reviews and merges accepted work. A collaborator with Read access cannot
+push directly to `main`.
 
 Do not commit `.env` files, credentials, customer data, generated audit output,
 model caches, dependency folders, or a Sites `.openai/hosting.json` file. Use
