@@ -101,6 +101,18 @@ describe("fromStripeCharge", () => {
     expect(() => fromStripeCharge(null)).toThrow(ConnectorError);
   });
 
+  it("throws ConnectorError for a fractional amount", () => {
+    expect(() =>
+      fromStripeCharge({
+        id: "ch_fractional",
+        amount: 84.5,
+        currency: "usd",
+        status: "succeeded",
+        created: 1781028000,
+      }),
+    ).toThrow(ConnectorError);
+  });
+
   it("resolves the order ref via a custom orderRefKey", () => {
     const record = fromStripeCharge(
       {
@@ -352,6 +364,24 @@ describe("fromShopifyOrder", () => {
 
   it("throws ConnectorError for a non-object order", () => {
     expect(() => fromShopifyOrder(null)).toThrow(ConnectorError);
+  });
+
+  it("treats fulfillments: null as no fulfillments yet", () => {
+    const records = fromShopifyOrder({
+      id: 555,
+      fulfillments: null,
+    });
+    expect(records).toEqual([]);
+    expect(Object.isFrozen(records)).toBe(true);
+  });
+
+  it("throws ConnectorError when fulfillments is a non-array, non-null value", () => {
+    expect(() =>
+      fromShopifyOrder({
+        id: 555,
+        fulfillments: "not-an-array",
+      }),
+    ).toThrow(ConnectorError);
   });
 });
 

@@ -118,8 +118,10 @@ export function fromStripeCharge(
   }
   const ref = requiredIdString(charge.id, "Stripe charge.id");
   const amount = charge.amount;
-  if (typeof amount !== "number" || !Number.isFinite(amount)) {
-    throw new ConnectorError("Stripe charge.amount must be a finite number (minor units).");
+  if (typeof amount !== "number" || !Number.isInteger(amount) || amount < 0) {
+    throw new ConnectorError(
+      "Stripe charge.amount must be a non-negative integer number of minor units (e.g. cents).",
+    );
   }
   const currency = requiredNonEmptyString(charge.currency, "Stripe charge.currency");
   const occurredAt = unixSecondsToIso(charge.created, "Stripe charge.created");
@@ -226,7 +228,7 @@ export function fromShopifyOrder(order: unknown): readonly ShipmentRecord[] {
   }
   const orderRef = requiredIdString(order.id, "Shopify order.id");
   const fulfillments = order.fulfillments;
-  if (fulfillments === undefined) {
+  if (fulfillments === undefined || fulfillments === null) {
     return Object.freeze([]);
   }
   if (!Array.isArray(fulfillments)) {
