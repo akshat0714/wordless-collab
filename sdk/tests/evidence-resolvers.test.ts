@@ -181,6 +181,39 @@ describe("resolveShipmentEvidence", () => {
     );
     expect(evidence?.status).toBe("delivered");
   });
+
+  it("rejects an unknown status", () => {
+    expect(() =>
+      resolveShipmentEvidence({
+        ref: "ship-5",
+        occurredAt: "2026-07-30T19:00:00Z",
+        orderRef: "order-441",
+        status: "teleporting",
+      }),
+    ).toThrow(EvidenceResolverError);
+  });
+
+  it("rejects a malformed occurredAt timestamp (missing T/timezone)", () => {
+    expect(() =>
+      resolveShipmentEvidence({
+        ref: "ship-6",
+        occurredAt: "2026-07-25 11:00",
+        orderRef: "order-441",
+        status: "shipped",
+      }),
+    ).toThrow(EvidenceResolverError);
+  });
+
+  it("rejects an empty/whitespace ref", () => {
+    expect(() =>
+      resolveShipmentEvidence({
+        ref: "   ",
+        occurredAt: "2026-07-30T19:00:00Z",
+        orderRef: "order-441",
+        status: "shipped",
+      }),
+    ).toThrow(EvidenceResolverError);
+  });
 });
 
 describe("resolveFulfillmentEvidence", () => {
@@ -217,6 +250,19 @@ describe("resolveFulfillmentEvidence", () => {
     });
     expect(evidence?.status).toBe("wrong_item");
   });
+
+  it("rejects an unknown status", () => {
+    expect(() =>
+      resolveFulfillmentEvidence({
+        ref: "fulfill-4",
+        occurredAt: "2026-07-30T19:00:00Z",
+        orderRef: "order-441",
+        orderedSku: "SKU-A",
+        deliveredSku: "SKU-B",
+        status: "partially_shipped",
+      }),
+    ).toThrow(EvidenceResolverError);
+  });
 });
 
 describe("resolveAccountAccessEvidence", () => {
@@ -239,6 +285,17 @@ describe("resolveAccountAccessEvidence", () => {
         accountRef: "account-9",
         status: "locked",
         failedAttempts: -1,
+      }),
+    ).toThrow(EvidenceResolverError);
+  });
+
+  it("rejects an unknown status", () => {
+    expect(() =>
+      resolveAccountAccessEvidence({
+        ref: "access-3",
+        occurredAt: "2026-07-30T19:00:00Z",
+        accountRef: "account-9",
+        status: "suspended",
       }),
     ).toThrow(EvidenceResolverError);
   });
@@ -357,6 +414,17 @@ describe("resolveAccountEvidence", () => {
     for (const item of result.evidence) {
       expect(Object.isFrozen(item)).toBe(true);
     }
+  });
+
+  it("rejects a non-object metadata value", () => {
+    expect(() =>
+      resolveAccountEvidence({
+        customerId: "customer-2",
+        observedAt: OBSERVED_AT,
+        // @ts-expect-error intentionally invalid at runtime to exercise the guard
+        metadata: [1, 2, 3],
+      }),
+    ).toThrow(EvidenceResolverError);
   });
 });
 

@@ -200,6 +200,17 @@ function optionalOrderRef(value: unknown, label: string): string | null | undefi
   return requiredString(value, label);
 }
 
+function optionalMetadata(
+  value: unknown,
+  label: string,
+): Readonly<Record<string, WordlessJsonValue>> | undefined {
+  if (value === undefined || value === null) return undefined;
+  if (!isRecord(value)) {
+    throw new EvidenceResolverError(`${label} must be a plain object.`);
+  }
+  return Object.freeze({ ...value }) as Readonly<Record<string, WordlessJsonValue>>;
+}
+
 function requiredTimestamp(value: unknown, label: string): string {
   if (
     typeof value !== "string" ||
@@ -655,11 +666,12 @@ export function resolveAccountEvidence(
   const customerId = requiredString(input.customerId, "customerId", 512);
   const evidence = buildEvidenceSnapshot(input);
   const observedAt = requiredTimestamp(input.observedAt, "observedAt");
+  const metadata = optionalMetadata(input.metadata, "metadata");
   return Object.freeze({
     authenticated: true as const,
     customerId,
     observedAt,
     evidence,
-    ...(input.metadata === undefined ? {} : { metadata: Object.freeze({ ...input.metadata }) }),
+    ...(metadata === undefined ? {} : { metadata }),
   });
 }
