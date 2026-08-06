@@ -8,7 +8,8 @@
       "@wordless/sdk/server": ["./src/server.ts"],
       "@wordless/sdk/zendesk": ["./src/zendesk.ts"],
       "@wordless/sdk/zendesk-marketplace": ["./src/zendesk-marketplace.ts"],
-      "@wordless/sdk/evidence-resolvers": ["./src/evidence-resolvers.ts"]
+      "@wordless/sdk/evidence-resolvers": ["./src/evidence-resolvers.ts"],
+      "@wordless/sdk/connectors": ["./src/connectors.ts"]
     },
     "lib": ["DOM", "ES2020"],
     "strict": true,
