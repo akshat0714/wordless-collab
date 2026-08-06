@@ -51,6 +51,13 @@
         "import": "./dist/esm/evidence-resolvers.js",
         "default": "./dist/esm/evidence-resolvers.js"
       }
+    },
+    "./connectors": {
+      "types": "./dist/types/connectors.d.ts",
+      "node": {
+        "import": "./dist/esm/connectors.js",
+        "default": "./dist/esm/connectors.js"
+      }
     }
   },
   "scripts": {
