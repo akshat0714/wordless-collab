@@ -44,6 +44,20 @@
         "import": "./dist/esm/zendesk-marketplace.js",
         "default": "./dist/esm/zendesk-marketplace.js"
       }
+    },
+    "./whatsapp": {
+      "types": "./dist/types/whatsapp.d.ts",
+      "node": {
+        "import": "./dist/esm/whatsapp.js",
+        "default": "./dist/esm/whatsapp.js"
+      }
+    },
+    "./slack": {
+      "types": "./dist/types/slack.d.ts",
+      "node": {
+        "import": "./dist/esm/slack.js",
+        "default": "./dist/esm/slack.js"
+      }
     }
   },
   "scripts": {
