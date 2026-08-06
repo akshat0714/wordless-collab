@@ -22,12 +22,35 @@ describe("verifySlackSignature", () => {
     expect(verifySlackSignature(body, { signature: sign(body, staleTs), timestamp: staleTs }, SECRET, NOW)).toBe(false);
     expect(verifySlackSignature(body, { signature: null, timestamp: TS }, SECRET, NOW)).toBe(false);
   });
+
+  it("rejects an equal-length-but-wrong signature (content-mismatch branch, not the length short-circuit)", () => {
+    const body = "payload=x";
+    const valid = sign(body);
+    // Same "v0=" + 64 hex chars shape as a real signature, but the bytes are
+    // wrong — this exercises the timingSafeEqual comparison itself rather
+    // than the `providedBuf.length === expectedBuf.length` short-circuit.
+    const lastHexChar = valid.slice(-1);
+    const flippedHexChar = lastHexChar === "0" ? "1" : "0";
+    const wrongButSameLength = valid.slice(0, -1) + flippedHexChar;
+    expect(wrongButSameLength).toHaveLength(valid.length);
+    expect(wrongButSameLength).not.toBe(valid);
+    expect(verifySlackSignature(body, { signature: wrongButSameLength, timestamp: TS }, SECRET, NOW)).toBe(false);
+  });
+
+  it("rejects a missing/null X-Slack-Request-Timestamp header", () => {
+    const body = "payload=x";
+    expect(verifySlackSignature(body, { signature: sign(body), timestamp: null }, SECRET, NOW)).toBe(false);
+  });
 });
 
 describe("verifySlackUrlVerification", () => {
   it("returns the challenge only for url_verification", () => {
     expect(verifySlackUrlVerification({ type: "url_verification", challenge: "c1" })).toBe("c1");
     expect(verifySlackUrlVerification({ type: "event_callback" })).toBeNull();
+  });
+
+  it("throws when type is url_verification but challenge is absent", () => {
+    expect(() => verifySlackUrlVerification({ type: "url_verification" })).toThrow(SlackWebhookValidationError);
   });
 });
 
@@ -46,6 +69,11 @@ describe("parseSlackMessageEvent", () => {
       event: { type: "message", channel: "C1", user: "U1", ts: "not-a-timestamp", text: "x" } };
     expect(parseSlackMessageEvent(body, "UBOT")).toMatchObject({ ignored: "not_a_user_message" });
   });
+
+  it("freezes the ignored sentinel result", () => {
+    const ignored = parseSlackMessageEvent({ type: "shortcut" }, "UBOT");
+    expect(Object.isFrozen(ignored)).toBe(true);
+  });
 });
 
 describe("parseSlackBlockActions", () => {
@@ -53,7 +81,18 @@ describe("parseSlackBlockActions", () => {
     const payload = { type: "block_actions", team: { id: "T1" }, user: { id: "U1" }, channel: { id: "C1" },
       response_url: "https://hooks.slack.test/1", actions: [{ type: "button", action_id: "c1", value: "wl2.sg.x", action_ts: "1700000005.5" }] };
     expect(parseSlackBlockActions(payload)).toMatchObject({ teamId: "T1", channelId: "C1", userId: "U1", value: "wl2.sg.x", responseUrl: "https://hooks.slack.test/1" });
-    expect(parseSlackBlockActions({ type: "shortcut" })).toMatchObject({ ignored: "not_a_button_action" });
+    const ignored = parseSlackBlockActions({ type: "shortcut" });
+    expect(ignored).toMatchObject({ ignored: "not_a_button_action" });
+    expect(Object.isFrozen(ignored)).toBe(true);
+  });
+
+  it("ignores a block_actions payload with more than MAX_ACTIONS (25) actions", () => {
+    const button = { type: "button", action_id: "c1", value: "wl2.sg.x", action_ts: "1700000005.5" };
+    const withinBound = { type: "block_actions", team: { id: "T1" }, user: { id: "U1" }, channel: { id: "C1" }, actions: Array(25).fill(button) };
+    expect(parseSlackBlockActions(withinBound)).toMatchObject({ teamId: "T1" });
+
+    const overBound = { type: "block_actions", team: { id: "T1" }, user: { id: "U1" }, channel: { id: "C1" }, actions: Array(26).fill(button) };
+    expect(parseSlackBlockActions(overBound)).toMatchObject({ ignored: "not_a_button_action" });
   });
 });
 
@@ -86,6 +125,29 @@ describe("buildSlackPostMessage", () => {
     expect(actions.elements[1].text.text).toBe(SLACK_SHOW_CHOICES_LABEL);
     expect(actions.elements[0].value.startsWith("wl2.")).toBe(true);
     expect(pendingChoices?.choices).toHaveLength(2);
+  });
+
+  it("throws when a turn carries more than 3 choices", () => {
+    const turn = { kind: "clarification_choices", hostAction: "show_wordless", renderMode: "choices", suggestionId: SUG,
+      reviewRequired: true, readOnly: true, processingMs: 2, message: "Did you mean:", detectorId: "duplicate_charge", evidenceIndexes: [0], reason: null,
+      choices: [
+        { id: "c1", label: "A", reply: "a", detectorId: "duplicate_charge", evidenceIndexes: [0] },
+        { id: "c2", label: "B", reply: "b", detectorId: "duplicate_charge", evidenceIndexes: [0] },
+        { id: "c3", label: "C", reply: "c", detectorId: "duplicate_charge", evidenceIndexes: [0] },
+        { id: "c4", label: "D", reply: "d", detectorId: null, evidenceIndexes: [] },
+      ] } as any;
+    expect(() => buildSlackPostMessage(IN, turn, SIG, "nonceBB", 1000, 2000)).toThrow(/at most 3 buttons/);
+  });
+
+  it("throws when the turn's message is null (continue_host_bot turns must never reach the mapper)", () => {
+    // The adapter always short-circuits continue_host_bot turns before
+    // calling buildSlackPostMessage (see createSlackAdapter's onMessage), so
+    // this guard is unreachable through the public adapter surface — it is
+    // only exercised by calling the mapper directly, as a defense-in-depth
+    // check against a caller (or future refactor) that skips that guard.
+    const turn = { kind: "no_match", hostAction: "continue_host_bot", renderMode: "message", suggestionId: SUG,
+      reviewRequired: false, readOnly: true, processingMs: 1, message: null, choices: [], detectorId: null, evidenceIndexes: [], reason: null } as any;
+    expect(() => buildSlackPostMessage(IN, turn, SIG, "nonceBB", 1000, 2000)).toThrow(/must contain a message/);
   });
 });
 
@@ -170,9 +232,11 @@ describe("createSlackAdapter", () => {
     const botBody = JSON.stringify({ type: "event_callback", team_id: "T1", event: { type: "message", channel: "C1", user: "U1", ts: "1", text: "x", bot_id: "B1" } });
     const outcome = await adapter.processEvent(botBody, { signature: sig(botBody), timestamp: TS2 });
     expect(outcome).toMatchObject({ kind: "ignored" });
+    expect(Object.isFrozen(outcome)).toBe(true);
     const shortcut = "payload=" + encodeURIComponent(JSON.stringify({ type: "shortcut" }));
     const result = await adapter.processInteraction(shortcut, { signature: sig(shortcut), timestamp: TS2 });
     expect(result).toMatchObject({ kind: "ignored", reason: "not_a_button_action" });
+    expect(Object.isFrozen(result)).toBe(true);
   });
 
   it("continues when the account is unauthenticated", async () => {

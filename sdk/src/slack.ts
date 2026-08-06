@@ -75,32 +75,35 @@ export interface SlackInboundAction {
   readonly actionTs: string; readonly responseUrl: string | null; readonly value: string;
 }
 
+const NOT_A_USER_MESSAGE = Object.freeze({ ignored: "not_a_user_message" as const });
+const NOT_A_BUTTON_ACTION = Object.freeze({ ignored: "not_a_button_action" as const });
+
 export function parseSlackMessageEvent(parsedBody: unknown, selfBotUserId: string): SlackInboundMessage | { readonly ignored: "not_a_user_message" } {
-  if (!isRecord(parsedBody) || parsedBody.type !== "event_callback" || !isRecord(parsedBody.event)) return { ignored: "not_a_user_message" };
+  if (!isRecord(parsedBody) || parsedBody.type !== "event_callback" || !isRecord(parsedBody.event)) return NOT_A_USER_MESSAGE;
   const event = parsedBody.event;
-  if (event.type !== "message" || event.bot_id !== undefined || event.subtype !== undefined) return { ignored: "not_a_user_message" };
+  if (event.type !== "message" || event.bot_id !== undefined || event.subtype !== undefined) return NOT_A_USER_MESSAGE;
   const teamId = str(parsedBody.team_id, 64);
   const channelId = str(event.channel, 64);
   const userId = str(event.user, 64);
   const messageTs = slackTimestamp(event.ts, 64);
   const text = typeof event.text === "string" ? event.text.slice(0, 4_000) : "";
   if (teamId === null || channelId === null || userId === null || messageTs === null || userId === selfBotUserId) {
-    return { ignored: "not_a_user_message" };
+    return NOT_A_USER_MESSAGE;
   }
   return Object.freeze({ teamId, channelId, userId, messageTs, text });
 }
 
 export function parseSlackBlockActions(parsedPayload: unknown): SlackInboundAction | { readonly ignored: "not_a_button_action" } {
-  if (!isRecord(parsedPayload) || parsedPayload.type !== "block_actions" || !Array.isArray(parsedPayload.actions)) return { ignored: "not_a_button_action" };
-  if (parsedPayload.actions.length > MAX_ACTIONS) return { ignored: "not_a_button_action" };
+  if (!isRecord(parsedPayload) || parsedPayload.type !== "block_actions" || !Array.isArray(parsedPayload.actions)) return NOT_A_BUTTON_ACTION;
+  if (parsedPayload.actions.length > MAX_ACTIONS) return NOT_A_BUTTON_ACTION;
   const action = parsedPayload.actions.find((a) => isRecord(a) && a.type === "button");
-  if (!isRecord(action)) return { ignored: "not_a_button_action" };
+  if (!isRecord(action)) return NOT_A_BUTTON_ACTION;
   const team = isRecord(parsedPayload.team) ? str(parsedPayload.team.id, 64) : null;
   const user = isRecord(parsedPayload.user) ? str(parsedPayload.user.id, 64) : null;
   const channel = isRecord(parsedPayload.channel) ? str(parsedPayload.channel.id, 64) : null;
   const value = str(action.value, 2_000);
   const actionTs = str(action.action_ts, 64) ?? str(parsedPayload.action_ts as unknown, 64) ?? "0";
-  if (team === null || user === null || channel === null || value === null) return { ignored: "not_a_button_action" };
+  if (team === null || user === null || channel === null || value === null) return NOT_A_BUTTON_ACTION;
   return Object.freeze({ teamId: team, channelId: channel, userId: user, actionTs, responseUrl: str(parsedPayload.response_url, 1_024), value });
 }
 

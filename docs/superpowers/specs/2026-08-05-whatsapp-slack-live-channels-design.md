@@ -353,6 +353,19 @@ exposing the detector from `zendesk.ts` via a single additive named export and
 importing that from the new channels — still one source of truth, no behavior
 change.
 
+**Post-implementation update:** the fallback path was taken, in a stronger form.
+`channel-support.ts`'s `detectHumanRequest` was implemented as a fresh, focused
+detector written independently for WhatsApp/Slack, rather than extracted from or
+delegating to `zendesk.ts`. Converging Zendesk onto the shared detector is
+explicitly declined: Zendesk's battery is materially richer (fuzzy-typo role
+tokens, clause-splitting, reported/retracted/hypothetical-phrasing exclusions,
+courier/delivery-context false-positive guards) and already has its own audited
+test coverage in `sdk/tests/zendesk.test.ts`. Merging the two would either thin
+out Zendesk's detection to match the simpler shared logic or bloat the shared
+detector with Zendesk-specific coupling that WhatsApp/Slack don't need — both are
+regressions relative to leaving `zendesk.ts` untouched. `zendesk.ts` keeps its own
+independent detector and is not touched by this work.
+
 ## 12. Open questions for review
 
 1. Human handoff on these channels has no Switchboard equivalent; the adapter

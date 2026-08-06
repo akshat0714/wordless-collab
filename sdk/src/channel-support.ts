@@ -42,9 +42,22 @@ function decodeFeedback(code: string): { detectorId: string | null; feedback: Ch
   return null;
 }
 
+// Length-prefix each binding part before HMAC-ing so the byte sequence is an
+// injective (unambiguous) encoding of the parts array: joining with a plain
+// separator (e.g. "\n") lets ["a","b\nc"] and ["a\nb","c"] hash identically,
+// but a `<byteLength>:<part>` prefix on every part makes that collision
+// impossible, since the byte length is recorded before the part's own bytes.
+function encodeBindingParts(bindingParts: readonly string[]): string {
+  let encoded = "";
+  for (const part of bindingParts) {
+    encoded += `${Buffer.byteLength(part, "utf8")}:${part}`;
+  }
+  return encoded;
+}
+
 function signature(bindingParts: readonly string[], core: string, signingSecret: string): string {
   return createHmac("sha256", Buffer.from(signingSecret, "utf8"))
-    .update(`${bindingParts.join("\n")}\n${core}`, "utf8")
+    .update(`${encodeBindingParts(bindingParts)}\n${core}`, "utf8")
     .digest("base64url")
     .slice(0, 22);
 }

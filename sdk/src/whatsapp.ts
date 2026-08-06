@@ -117,11 +117,11 @@ export function parseWhatsAppEnvelope(
       const metadata = isRecord(val.metadata) ? val.metadata : {};
       const phoneNumberId = optionalString(metadata.phone_number_id, 128);
       if (phoneNumberId !== expectedPhoneNumberId) {
-        results.push({ kind: "ignored", reason: "wrong_number", messageId: null });
+        results.push(Object.freeze({ kind: "ignored", reason: "wrong_number", messageId: null }));
         continue;
       }
       if (Array.isArray(val.statuses) && val.statuses.length > 0) {
-        results.push({ kind: "ignored", reason: "status", messageId: null });
+        results.push(Object.freeze({ kind: "ignored", reason: "status", messageId: null }));
       }
       if (!Array.isArray(val.messages)) continue;
       if (val.messages.length > MAX_MESSAGES) {
@@ -138,21 +138,21 @@ export function parseWhatsAppEnvelope(
           throw new WhatsAppWebhookValidationError("WhatsApp message is missing required fields.");
         }
         if (message.type === "text" && isRecord(message.text)) {
-          results.push({ kind: "message", inbound: Object.freeze({
+          results.push(Object.freeze({ kind: "message", inbound: Object.freeze({
             phoneNumberId, waId, messageId, receivedAt, type: "text",
             text: optionalString(message.text.body, MAX_TEXT_LENGTH) ?? "", buttonPayload: null,
-          }) });
+          }) }));
         } else if (
           message.type === "interactive" && isRecord(message.interactive) &&
           message.interactive.type === "button_reply" && isRecord(message.interactive.button_reply)
         ) {
           const payload = optionalString(message.interactive.button_reply.id, 256);
-          if (payload === null) { results.push({ kind: "ignored", reason: "unsupported_type", messageId }); continue; }
-          results.push({ kind: "message", inbound: Object.freeze({
+          if (payload === null) { results.push(Object.freeze({ kind: "ignored", reason: "unsupported_type", messageId })); continue; }
+          results.push(Object.freeze({ kind: "message", inbound: Object.freeze({
             phoneNumberId, waId, messageId, receivedAt, type: "button_reply", text: null, buttonPayload: payload,
-          }) });
+          }) }));
         } else {
-          results.push({ kind: "ignored", reason: "unsupported_type", messageId });
+          results.push(Object.freeze({ kind: "ignored", reason: "unsupported_type", messageId }));
         }
       }
     }

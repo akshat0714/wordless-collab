@@ -63,6 +63,33 @@ describe("signed choice payloads", () => {
   it("rejects a malformed payload", () => {
     expect(verifySignedChoicePayload({ payload: "not-a-payload", bindingParts: base.bindingParts, signingSecret: SECRET, nowSeconds: 1_500 })).toBeNull();
   });
+
+  it("rejects a wrong-part-count payload (7 or 9 dot-separated segments)", () => {
+    // A well-formed payload has exactly 8 dot-separated segments (wl2.<suggestionId>.<choiceId>.<code>.<issued>.<expires>.<nonce>.<sig>).
+    const payload = createSignedChoicePayload({ ...base, detectorId: null, feedback: "none" });
+    const segments = payload.split(".");
+    expect(segments).toHaveLength(8);
+    const sevenSegments = segments.slice(0, 7).join(".");
+    const nineSegments = `${payload}.extra`;
+    expect(verifySignedChoicePayload({ payload: sevenSegments, bindingParts: base.bindingParts, signingSecret: SECRET, nowSeconds: 1_500 })).toBeNull();
+    expect(verifySignedChoicePayload({ payload: nineSegments, bindingParts: base.bindingParts, signingSecret: SECRET, nowSeconds: 1_500 })).toBeNull();
+  });
+
+  it("does not let differently-split binding parts collide (length-prefixed encoding)", () => {
+    // Before length-prefixing, HMAC-ing bindingParts.join("\n") made
+    // ["a", "b\nc"] and ["a\nb", "c"] hash identically. Length-prefixing each
+    // part must make the two bindings produce different signatures, so a
+    // payload signed under one binding is rejected when verified under the
+    // other, even though joining them with "\n" would look the same.
+    const payloadA = createSignedChoicePayload({ ...base, bindingParts: ["a", "b\nc"], detectorId: null, feedback: "none" });
+    const payloadB = createSignedChoicePayload({ ...base, bindingParts: ["a\nb", "c"], detectorId: null, feedback: "none" });
+    expect(payloadA).not.toBe(payloadB);
+    expect(verifySignedChoicePayload({ payload: payloadA, bindingParts: ["a\nb", "c"], signingSecret: SECRET, nowSeconds: 1_500 })).toBeNull();
+    expect(verifySignedChoicePayload({ payload: payloadB, bindingParts: ["a", "b\nc"], signingSecret: SECRET, nowSeconds: 1_500 })).toBeNull();
+    // Each still verifies fine against its own original binding.
+    expect(verifySignedChoicePayload({ payload: payloadA, bindingParts: ["a", "b\nc"], signingSecret: SECRET, nowSeconds: 1_500 })).not.toBeNull();
+    expect(verifySignedChoicePayload({ payload: payloadB, bindingParts: ["a\nb", "c"], signingSecret: SECRET, nowSeconds: 1_500 })).not.toBeNull();
+  });
 });
 
 describe("isShowChoicesRequest", () => {

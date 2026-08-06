@@ -68,6 +68,21 @@ describe("parseWhatsAppEnvelope", () => {
     expect(parsed[0]).toMatchObject({ kind: "message", inbound: { type: "button_reply", buttonPayload: "wl2.sg.x", text: null } });
   });
 
+  it("parses a text message with a missing/non-string text.body to an empty string body", () => {
+    // The `text` field's isRecord(message.text) guard only checks the `text`
+    // object exists; `optionalString(message.text.body, ...)` falls back to
+    // "" when `body` is absent or not a string, rather than being rejected.
+    const missingBody = textEnvelope("placeholder");
+    (missingBody.entry[0]!.changes[0]!.value.messages[0] as any).text = {};
+    const parsedMissing = parseWhatsAppEnvelope(missingBody, PN);
+    expect(parsedMissing[0]).toMatchObject({ kind: "message", inbound: { type: "text", text: "" } });
+
+    const nonStringBody = textEnvelope("placeholder");
+    (nonStringBody.entry[0]!.changes[0]!.value.messages[0] as any).text = { body: 12345 };
+    const parsedNonString = parseWhatsAppEnvelope(nonStringBody, PN);
+    expect(parsedNonString[0]).toMatchObject({ kind: "message", inbound: { type: "text", text: "" } });
+  });
+
   it("ignores delivery statuses, unsupported types, and wrong phone numbers", () => {
     const status = { object: "whatsapp_business_account", entry: [{ id: "e", changes: [{ field: "messages", value: {
       metadata: { phone_number_id: PN }, statuses: [{ id: "wamid.s", status: "delivered" }] } }] }] };
@@ -78,6 +93,19 @@ describe("parseWhatsAppEnvelope", () => {
     expect(parseWhatsAppEnvelope(image, PN)[0]).toMatchObject({ kind: "ignored", reason: "unsupported_type" });
 
     expect(parseWhatsAppEnvelope(textEnvelope("x"), "999")[0]).toMatchObject({ kind: "ignored", reason: "wrong_number" });
+  });
+
+  it("freezes ignored and message result objects (not just the outer array and inbound payload)", () => {
+    const status = { object: "whatsapp_business_account", entry: [{ id: "e", changes: [{ field: "messages", value: {
+      metadata: { phone_number_id: PN }, statuses: [{ id: "wamid.s", status: "delivered" }] } }] }] };
+    const [ignoredEntry] = parseWhatsAppEnvelope(status, PN);
+    expect(ignoredEntry!.kind).toBe("ignored");
+    expect(Object.isFrozen(ignoredEntry)).toBe(true);
+
+    const [messageEntry] = parseWhatsAppEnvelope(textEnvelope("hello"), PN);
+    expect(messageEntry!.kind).toBe("message");
+    expect(Object.isFrozen(messageEntry)).toBe(true);
+    expect(Object.isFrozen((messageEntry as any).inbound)).toBe(true);
   });
 
   it("bounds the number of changes processed per entry", () => {
@@ -126,6 +154,24 @@ describe("buildWhatsAppSendRequest", () => {
     expect(buttons[1].reply.title).toBe(WHATSAPP_SHOW_CHOICES_LABEL);
     expect(buttons[0].reply.id.startsWith("wl2.")).toBe(true);
     expect(pendingChoices?.choices).toHaveLength(2);
+  });
+
+  it("raises when a choice's signed payload would exceed the 256-char WhatsApp button-id limit", () => {
+    // Push every payload-contributing field to its pattern-allowed maximum
+    // (64-char choiceId, 49-char detectorId, 64-char nonce, realistic epoch
+    // seconds) so the signed `wl2....` payload crosses 256 characters.
+    const longChoiceId = "c".repeat(64);
+    const longDetectorId = "d" + "e".repeat(48);
+    const longNonce = "n".repeat(64);
+    const turn = { ...turnBase("clarification_choices"), hostAction: "show_wordless", renderMode: "choices",
+      message: "Did you mean:", detectorId: longDetectorId, evidenceIndexes: [0], reason: null,
+      choices: [
+        { id: longChoiceId, label: "A", reply: "x", detectorId: longDetectorId, evidenceIndexes: [0] },
+        { id: "c2", label: "I don't know what to say", reply: "", detectorId: null, evidenceIndexes: [] },
+      ] } as any;
+    expect(() => buildWhatsAppSendRequest(INBOUND, turn, SIG, longNonce, 1_700_000_000, 1_700_003_600)).toThrow(
+      /256 characters/,
+    );
   });
 
   it("raises on an over-long detector label", () => {
