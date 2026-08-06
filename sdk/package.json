@@ -44,6 +44,13 @@
         "import": "./dist/esm/zendesk-marketplace.js",
         "default": "./dist/esm/zendesk-marketplace.js"
       }
+    },
+    "./evidence-resolvers": {
+      "types": "./dist/types/evidence-resolvers.d.ts",
+      "node": {
+        "import": "./dist/esm/evidence-resolvers.js",
+        "default": "./dist/esm/evidence-resolvers.js"
+      }
     }
   },
   "scripts": {
