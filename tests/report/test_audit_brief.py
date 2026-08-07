@@ -1,6 +1,8 @@
 import re
-from datetime import UTC, date, datetime
 from pathlib import Path
+
+import pytest
+from pydantic import ValidationError
 
 from wordless.report.brief import (
     BriefContext,
@@ -11,16 +13,10 @@ from wordless.report.brief import (
 )
 from wordless.report.build import (
     AuditReport,
-    BenchmarkResult,
-    EvidenceLine,
     JudgeValidation,
     LengthSegment,
     OutcomeCounts,
     ProvenanceDistribution,
-    RedactionDisclosure,
-    RiskCoveragePoint,
-    TicketFinding,
-    TranscriptLine,
 )
 
 from tests.report.test_build import fixture_report
@@ -246,3 +242,80 @@ def test_script_round_trips_report_json(tmp_path: Path) -> None:
     assert (brief_dir / "brief.md").exists()
     assert (brief_dir / "brief.html").read_text(encoding="utf-8")
     assert (brief_dir / "brief.md").read_text(encoding="utf-8")
+
+
+def _evidence_eligible_report() -> AuditReport:
+    """An estimable report whose disagreement denominator is an explicit,
+    evidence-eligible subset of analyzed (not the analyzed fallback)."""
+
+    base = fixture_report()
+    return base.model_copy(
+        update={
+            "outcomes": OutcomeCounts(
+                analyzed=base.outcomes.analyzed,
+                evidence_eligible=80,
+                evidence_eligibility_method="linked account state present at ticket open",
+                agreement_at_1=base.outcomes.agreement_at_1,
+                agreement_at_3=base.outcomes.agreement_at_3,
+                abstained=base.outcomes.abstained,
+                disagreements=base.outcomes.disagreements,
+                human_reviewed=base.outcomes.human_reviewed,
+            ),
+        }
+    )
+
+
+def test_evidence_eligible_denominator_is_used_and_disclosed() -> None:
+    report = _evidence_eligible_report()
+    context = build_brief_context(report)
+
+    # The explicit evidence-eligible denominator is used, not analyzed.
+    assert context.denominator == 80
+    assert context.denominator != report.outcomes.analyzed
+    assert "linked account state present at ticket open" in context.denominator_basis
+    assert "evidence-eligible" in context.denominator_basis
+    # The rate keeps the report's own numerator AND denominator — no silent switch.
+    assert context.disagreement_rate == report.outcomes.disagreement_rate
+    assert context.disagreement_rate == report.outcomes.disagreements / 80
+    # The headline labels the basis truthfully.
+    assert "evidence-eligible conversations" in context.headline
+    assert f"{report.outcomes.disagreements} of 80" in context.headline
+
+
+def test_analyzed_basis_headline_does_not_claim_evidence_eligible() -> None:
+    report = fixture_report()  # evidence_eligible is None → denominator is analyzed
+    context = build_brief_context(report)
+
+    assert context.denominator == report.outcomes.analyzed
+    assert "evidence-eligible conversations" not in context.headline
+    assert "conversations analyzed" in context.headline
+
+
+def test_brief_context_rejects_inconsistent_estimability() -> None:
+    """The honesty invariant is enforced by the model, not just by its one
+    current call site: estimable and disagreement_rate/not_estimable_reason
+    can never disagree."""
+
+    estimable = build_brief_context(fixture_report())
+    # Estimable but carrying a not_estimable_reason.
+    with pytest.raises(ValidationError):
+        BriefContext.model_validate(
+            {**estimable.model_dump(), "not_estimable_reason": "tampered"}
+        )
+    # Estimable but missing the rate.
+    with pytest.raises(ValidationError):
+        BriefContext.model_validate(
+            {**estimable.model_dump(), "disagreement_rate": None}
+        )
+
+    degraded = build_brief_context(degraded_report())
+    # Not estimable but carrying a fabricated rate.
+    with pytest.raises(ValidationError):
+        BriefContext.model_validate(
+            {**degraded.model_dump(), "disagreement_rate": 0.5}
+        )
+    # Not estimable but missing the reason.
+    with pytest.raises(ValidationError):
+        BriefContext.model_validate(
+            {**degraded.model_dump(), "not_estimable_reason": None}
+        )

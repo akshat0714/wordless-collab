@@ -17,7 +17,7 @@ from datetime import date
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from wordless.report.build import AuditReport, EvidenceLine, SourceAttribution, TicketFinding
 
@@ -88,6 +88,7 @@ class BriefContext(FrozenModel):
     state_quality_note: str
 
     judge_reviewed: int
+    judge_agreements: int
     judge_method: str
     judge_agreement_rate: float | None
 
@@ -97,9 +98,37 @@ class BriefContext(FrozenModel):
     headline: str
     cta: str
 
+    @model_validator(mode="after")
+    def validate_estimability(self) -> "BriefContext":
+        """Structurally enforce the brief's honesty invariant.
+
+        `estimable` and `disagreement_rate`/`not_estimable_reason` must never
+        disagree with one another — this is provable at the model level
+        rather than merely a convention `build_brief_context` happens to
+        follow.
+        """
+
+        if self.estimable:
+            if self.not_estimable_reason is not None:
+                raise ValueError("an estimable brief cannot carry a not_estimable_reason")
+            if self.disagreement_rate is None:
+                raise ValueError("an estimable brief must carry a disagreement_rate")
+        else:
+            if not self.not_estimable_reason:
+                raise ValueError("a non-estimable brief requires a not_estimable_reason")
+            if self.disagreement_rate is not None:
+                raise ValueError("a non-estimable brief cannot carry a disagreement_rate")
+        return self
+
 
 def _not_estimable_reason(report: AuditReport, denominator: int | None) -> str:
-    """Derive an honest, plain-English reason the rate cannot be estimated."""
+    """Derive an honest, plain-English reason the rate cannot be estimated.
+
+    Only called when the brief is not estimable, which — given the
+    ``estimable`` formula in :func:`build_brief_context` — happens in
+    exactly two cases: an all-inferred export, or a zero denominator. There
+    is no third cause, so there is no fallback branch here.
+    """
 
     if report.all_state_degraded:
         return (
@@ -107,14 +136,10 @@ def _not_estimable_reason(report: AuditReport, denominator: int | None) -> str:
             "interaction is inferred from customer text alone; agreement and "
             "disagreement rates are not estimable and are therefore not reported."
         )
-    if not denominator:
-        return (
-            "No interactions were eligible for evidence-based comparison in this "
-            "export, so a disagreement rate has no denominator and is not reported."
-        )
+    assert not denominator  # the only remaining not-estimable cause
     return (
-        "This report's replay produced no denominator for a disagreement rate, "
-        "so it is not reported."
+        "No interactions were eligible for evidence-based comparison in this "
+        "export, so a disagreement rate has no denominator and is not reported."
     )
 
 
@@ -148,14 +173,24 @@ def _headline(
     estimable: bool,
     denominator: int | None,
     example_findings: tuple[BriefFinding, ...],
+    evidence_eligible_denominator: bool,
 ) -> str:
     if estimable:
         rate = report.outcomes.disagreement_rate
         assert rate is not None  # estimable implies a rate
         shown = len(example_findings)
+        # The wording must track the actual denominator basis: only say
+        # "evidence-eligible" when the report set an explicit
+        # evidence_eligible denominator, otherwise the count is over all
+        # analyzed conversations and must say so plainly.
+        basis_label = (
+            "evidence-eligible conversations"
+            if evidence_eligible_denominator
+            else "conversations analyzed"
+        )
         return (
-            f"{report.outcomes.disagreements} of {denominator} evidence-eligible "
-            f"conversations were closed against the account evidence "
+            f"{report.outcomes.disagreements} of {denominator} {basis_label} "
+            f"were closed against the account evidence "
             f"({rate * 100:.1f}%), showing {shown} of {report.outcomes.disagreements} below."
         )
     return (
@@ -213,6 +248,7 @@ def build_brief_context(
         provenance_inferred=report.provenance.inferred,
         state_quality_note=_state_quality_note(report),
         judge_reviewed=report.judge.sample_size,
+        judge_agreements=report.judge.agreements,
         judge_method=report.judge.method,
         judge_agreement_rate=report.judge.agreement_rate,
         limits=report.limits,
@@ -222,6 +258,7 @@ def build_brief_context(
             estimable=estimable,
             denominator=denominator,
             example_findings=example_findings,
+            evidence_eligible_denominator=report.outcomes.evidence_eligible is not None,
         ),
         cta=cta if cta is not None else DEFAULT_CTA,
     )

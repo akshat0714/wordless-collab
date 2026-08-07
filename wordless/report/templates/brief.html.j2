@@ -127,7 +127,7 @@
       <div>
         <h3>Judge validation</h3>
         {% if brief.judge_reviewed %}
-        <p>{{ brief.judge_reviewed|number }} judgments reviewed{% if brief.judge_agreement_rate is not none %} ({{ brief.judge_agreement_rate|percent }} agreement){% endif %}. {{ brief.judge_method }}</p>
+        <p>{{ brief.judge_agreements|number }} of {{ brief.judge_reviewed|number }} judgments agreed{% if brief.judge_agreement_rate is not none %} ({{ brief.judge_agreement_rate|percent }}){% endif %} — {{ brief.judge_method }}</p>
         {% else %}
         <p>Not estimable (n=0): no candidate judgments were produced for validation. {{ brief.judge_method }}</p>
         {% endif %}
