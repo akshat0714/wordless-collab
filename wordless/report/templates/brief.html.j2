@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Audit brief — {{ brief.organization }}</title>
+  <style>
+    :root {
+      --ink: #14181f; --ink-soft: #4a5462; --ink-faint: #8b94a3;
+      --paper: #fcfcfb; --surface: #ffffff; --rule: #e3e6ea; --rule-firm: #c9cfd6;
+      --flag: #8b3a2f; --flag-bg: #fbf2f0; --hold: #6b5b2e; --hold-bg: #faf6ec; --ok: #2f5d4f; --ok-bg: #eef5f2;
+    }
+    * { box-sizing: border-box; }
+    html { background: var(--paper); color: var(--ink); font: 400 15px/1.55 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    body { margin: 0; }
+    a { color: inherit; text-decoration-color: var(--ink-faint); text-underline-offset: .18em; }
+    a:focus-visible { outline: 3px solid var(--ok); outline-offset: 3px; }
+    .page { margin: 0 auto; max-width: 860px; padding: 0 24px 64px; }
+    .masthead { align-items: end; border-bottom: 1px solid var(--rule-firm); display: flex; flex-wrap: wrap; gap: 12px 24px; justify-content: space-between; padding: 24px 0; }
+    .wordmark { font-size: 13px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+    .run-meta { color: var(--ink-soft); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; font-variant-numeric: tabular-nums; text-align: right; }
+    .hero { border-bottom: 1px solid var(--rule-firm); padding: 48px 0 40px; }
+    .hero h1 { font-size: 22px; font-weight: 600; line-height: 1.32; margin: 0 0 16px; max-width: 58ch; }
+    .rate-card { align-items: baseline; border: 1px solid var(--rule-firm); display: flex; gap: 20px; margin-top: 8px; padding: 20px; }
+    .rate-number { color: var(--flag); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 40px; font-weight: 600; letter-spacing: -.03em; line-height: 1; }
+    .rate-detail { color: var(--ink-soft); font-size: 13px; }
+    .rate-detail strong { color: var(--ink); }
+    .not-estimable { background: var(--hold-bg); border: 1px solid var(--hold); border-left-width: 4px; margin-top: 8px; padding: 16px 20px; }
+    .not-estimable p { margin: 0; }
+    .not-estimable .label { color: var(--hold); font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+    section { border-bottom: 1px solid var(--rule); padding: 40px 0; }
+    h2 { font-size: 16px; font-weight: 600; margin: 0 0 20px; }
+    .measure { color: var(--ink-soft); max-width: 68ch; }
+    .caption { color: var(--ink-faint); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; margin: 0 0 16px; }
+    .finding-card { border: 1px solid var(--rule-firm); margin-bottom: 16px; padding: 18px 20px; }
+    .finding-card h3 { font-size: 14px; font-weight: 600; margin: 0 0 6px; }
+    .fragment { color: var(--ink-soft); font-style: italic; margin: 0 0 10px; }
+    .finding-meta { display: grid; gap: 6px; margin: 0 0 10px; }
+    .finding-meta dt { color: var(--ink-faint); font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+    .finding-meta dd { margin: 0 0 6px; }
+    .evidence-list { list-style: none; margin: 0; padding: 0; }
+    .evidence-list li { border-top: 1px solid var(--rule); padding: 8px 0; }
+    .provenance { color: var(--ink-faint); font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; text-transform: uppercase; }
+    .no-findings { color: var(--ink-soft); }
+    .provenance-strip { display: flex; flex-wrap: wrap; gap: 24px; }
+    .provenance-stat { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .provenance-stat .n { font-size: 20px; font-weight: 600; }
+    .provenance-stat .label { color: var(--ink-faint); display: block; font-size: 11px; text-transform: uppercase; }
+    .footer-grid { display: grid; gap: 24px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .footer-grid h3 { font-size: 13px; font-weight: 600; margin: 0 0 6px; }
+    .footer-grid p { margin: 0; }
+    .limits { max-width: 68ch; padding-left: 20px; }
+    .cta { background: var(--ok-bg); border: 1px solid var(--ok); padding: 20px; }
+    .cta p { margin: 0; }
+    footer.page-footer { color: var(--ink-faint); font-size: 12px; padding-top: 24px; }
+    @media (max-width: 640px) {
+      .masthead { flex-direction: column; align-items: flex-start; }
+      .run-meta { text-align: left; }
+      .footer-grid { grid-template-columns: 1fr; }
+    }
+    @media print {
+      html { background: #fff; }
+      .page { max-width: none; padding: 0; }
+      section, .finding-card { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+<main class="page">
+  <header class="masthead">
+    <div class="wordmark">Wordless audit brief</div>
+    <div class="run-meta">{{ brief.organization }} · {{ brief.analyzed|number }} conversations replayed<br>{{ brief.period_start|date_long }}–{{ brief.period_end|date_long }} · run {{ brief.run_date|date_long }}</div>
+  </header>
+
+  <div class="hero">
+    <h1>{{ brief.headline }}</h1>
+    {% if brief.estimable %}
+    <div class="rate-card">
+      <div class="rate-number">{{ brief.disagreement_rate|percent }}</div>
+      <div class="rate-detail"><strong>{{ brief.disagreements|number }}</strong> of <strong>{{ brief.denominator|number }}</strong> {{ brief.denominator_basis }} disagreed with the recorded resolution.<br>Method: {{ report.outcomes.method }}.</div>
+    </div>
+    {% else %}
+    <div class="not-estimable">
+      <p class="label">Not estimable</p>
+      <p>{{ brief.not_estimable_reason }}</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <section aria-labelledby="findings-heading">
+    <h2 id="findings-heading">Example findings</h2>
+    {% if brief.example_findings %}
+    <p class="caption">showing {{ brief.example_findings|length }} of {{ brief.disagreements|number }}, highest confidence first</p>
+    {% for finding in brief.example_findings %}
+    <article class="finding-card">
+      <h3>#{{ finding.interaction_id }} · {{ finding.opened_on.isoformat() }}</h3>
+      <p class="fragment">“{{ finding.fragment }}”</p>
+      <dl class="finding-meta">
+        <dt>Closed as</dt><dd>{{ finding.closed_as }}</dd>
+        <dt>Evidence indicated</dt><dd>{{ finding.evidence_indicated }}</dd>
+      </dl>
+      <ul class="evidence-list">
+        {% for evidence in finding.evidence %}
+        <li><span class="provenance">{{ evidence.provenance }} · {{ evidence.source }}</span><br>{{ evidence.text }}</li>
+        {% endfor %}
+      </ul>
+    </article>
+    {% endfor %}
+    {% else %}
+    <p class="no-findings">No example findings are available for this export. An empty findings list does not establish that every recorded resolution was correct.</p>
+    {% endif %}
+  </section>
+
+  <section aria-labelledby="state-heading">
+    <h2 id="state-heading">Account-state quality</h2>
+    <div class="provenance-strip">
+      <div class="provenance-stat"><span class="n">{{ brief.provenance_exported|number }}</span><span class="label">Exported</span></div>
+      <div class="provenance-stat"><span class="n">{{ brief.provenance_reconstructed|number }}</span><span class="label">Reconstructed</span></div>
+      <div class="provenance-stat"><span class="n">{{ brief.provenance_inferred|number }}</span><span class="label">Inferred</span></div>
+    </div>
+    <p class="measure">{{ brief.state_quality_note }}</p>
+  </section>
+
+  <section aria-labelledby="measurement-heading">
+    <h2 id="measurement-heading">Measurement notes</h2>
+    <div class="footer-grid">
+      <div>
+        <h3>Judge validation</h3>
+        {% if brief.judge_reviewed %}
+        <p>{{ brief.judge_reviewed|number }} judgments reviewed{% if brief.judge_agreement_rate is not none %} ({{ brief.judge_agreement_rate|percent }} agreement){% endif %}. {{ brief.judge_method }}</p>
+        {% else %}
+        <p>Not estimable (n=0): no candidate judgments were produced for validation. {{ brief.judge_method }}</p>
+        {% endif %}
+      </div>
+      <div>
+        <h3>Human review</h3>
+        <p>{{ brief.human_reviewed|number }} of {{ brief.analyzed|number }} analyzed conversations were reviewed by a person.</p>
+      </div>
+      {% if brief.source_attribution %}
+      <div>
+        <h3>Source and license</h3>
+        <p>{{ brief.source_attribution.citation }} <a href="{{ brief.source_attribution.url }}">Dataset record</a>. Licensed <a href="{{ brief.source_attribution.license_url }}">{{ brief.source_attribution.license_name }}</a>.</p>
+      </div>
+      {% endif %}
+    </div>
+    <h3>What this brief does not establish</h3>
+    <ul class="limits">{% for limit in brief.limits %}<li>{{ limit }}</li>{% endfor %}</ul>
+  </section>
+
+  <section aria-labelledby="cta-heading">
+    <h2 id="cta-heading">Next step</h2>
+    <div class="cta">
+      <p>{{ brief.cta }}</p>
+    </div>
+  </section>
+
+  <footer class="page-footer">Wordless Audit · local, read-only replay · no customer-system write path</footer>
+</main>
+</body>
+</html>

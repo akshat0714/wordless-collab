@@ -1,0 +1,66 @@
+# Audit brief — {{ brief.organization }}
+
+{{ brief.corpus_name }} · {{ brief.period_start|date_long }}–{{ brief.period_end|date_long }} · run {{ brief.run_date|date_long }} · {{ brief.analyzed|number }} conversations replayed
+
+## {{ brief.headline }}
+
+{% if brief.estimable -%}
+**{{ brief.disagreement_rate|percent }}** — {{ brief.disagreements|number }} of {{ brief.denominator|number }} {{ brief.denominator_basis }} disagreed with the recorded resolution.
+Method: {{ report.outcomes.method }}.
+{% else -%}
+**Not estimable.** {{ brief.not_estimable_reason }}
+{% endif %}
+
+## Example findings
+
+{% if brief.example_findings -%}
+_showing {{ brief.example_findings|length }} of {{ brief.disagreements|number }}, highest confidence first_
+
+{% for finding in brief.example_findings %}
+### #{{ finding.interaction_id }} · {{ finding.opened_on.isoformat() }}
+
+> {{ finding.fragment }}
+
+- **Closed as:** {{ finding.closed_as }}
+- **Evidence indicated:** {{ finding.evidence_indicated }}
+
+Evidence at contact time:
+{% for evidence in finding.evidence %}
+- ({{ evidence.provenance }} · {{ evidence.source }}) {{ evidence.text }}
+{%- endfor %}
+{% endfor %}
+{% else -%}
+No example findings are available for this export. An empty findings list does not establish that every recorded resolution was correct.
+{% endif %}
+
+## Account-state quality
+
+- Exported: {{ brief.provenance_exported|number }}
+- Reconstructed: {{ brief.provenance_reconstructed|number }}
+- Inferred: {{ brief.provenance_inferred|number }}
+
+{{ brief.state_quality_note }}
+
+## Measurement notes
+
+**Judge validation:** {% if brief.judge_reviewed -%}
+{{ brief.judge_reviewed|number }} judgments reviewed{% if brief.judge_agreement_rate is not none %} ({{ brief.judge_agreement_rate|percent }} agreement){% endif %}. {{ brief.judge_method }}
+{%- else -%}
+Not estimable (n=0): no candidate judgments were produced for validation. {{ brief.judge_method }}
+{%- endif %}
+
+**Human review:** {{ brief.human_reviewed|number }} of {{ brief.analyzed|number }} analyzed conversations were reviewed by a person.
+
+{% if brief.source_attribution -%}
+**Source and license:** {{ brief.source_attribution.citation }} ({{ brief.source_attribution.url }}). Licensed {{ brief.source_attribution.license_name }} ({{ brief.source_attribution.license_url }}).
+{% endif %}
+
+### What this brief does not establish
+
+{% for limit in brief.limits -%}
+- {{ limit }}
+{% endfor %}
+
+## Next step
+
+{{ brief.cta }}
